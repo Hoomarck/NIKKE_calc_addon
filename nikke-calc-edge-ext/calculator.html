@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIKKE 装备洗词条期望计算器 · T10 企业装改造</title>
+<link rel="stylesheet" href="calculator.css">
+<meta name="theme-color" id="metaThemeColor" content="#F3F3F3">
+<script src="theme.js"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="top-in">
+      <div class="logo">
+        <div class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#04141d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M12 22V12"/><path d="m3 7 9 5 9-5"/>
+          </svg>
+        </div>
+        <h1>NIKKE 装备洗词条期望计算器
+          <span class="thin">企业装词条洗练</span>
+        </h1>
+      </div>
+      <div class="top-badge">
+        <button type="button" class="btn ghost sm" id="btnOpenSidebar" title="打开侧边栏进行 Blablalink 登录与同步">📂 侧边栏同步</button>
+        <div class="theme-switch" role="group" aria-label="界面主题">
+          <button type="button" data-theme-set="auto" aria-pressed="true" title="跟随系统外观">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span class="ic-txt">自动</span>
+          </button>
+          <button type="button" data-theme-set="dark" aria-pressed="false" title="暗色主题">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span class="ic-txt">暗色</span>
+          </button>
+          <button type="button" data-theme-set="light" aria-pressed="false" title="日间主题">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><span class="ic-txt">日间</span>
+          </button>
+          <span class="sr" id="themeNow" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="globalError"></div>
+
+  <!-- ================= 0. 角色装备导入 & 四装备词条汇总 ================= -->
+  <section class="card ext-import-card" id="importCard">
+    <div class="ext-import-head">
+      <div class="num">0</div>
+      <h2>角色装备导入 &amp; 四装备词条汇总</h2>
+      <span class="sub" id="importSub">尚未同步角色数据</span>
+      <div class="ext-import-actions">
+        <button type="button" class="btn ghost sm" id="btnResetPart" hidden>恢复同步原值</button>
+        <button type="button" class="btn ghost sm" id="btnManualMode" aria-pressed="false">纯手动模式</button>
+        <button type="button" class="btn ghost sm" id="btnToggleImport" aria-expanded="true" aria-controls="importBody">
+          <span id="importToggleLabel">收起</span>
+          <span class="adv-caret ext-import-caret" aria-hidden="true">▾</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-b" id="importBody">
+      <div class="ext-import-empty" id="importEmpty">
+        <div class="ext-import-empty-txt">
+          <strong>尚未同步 Blablalink 角色装备数据</strong>
+          <p>请点击右上角「📂 侧边栏同步」或浏览器工具栏扩展图标登录 Blablalink 并同步角色数据，同步完成后将自动显示四部位词条卡片与全身汇总。</p>
+        </div>
+        <div class="ext-import-empty-btns">
+          <button type="button" class="btn primary sm" id="btnEmptyOpenSidebar">打开同步侧边栏</button>
+          <button type="button" class="btn ghost sm" id="btnEmptyOpenLogin">前往 Blablalink 登录</button>
+          <button type="button" class="btn ghost sm" id="btnEmptyManual">收起，使用纯手动模式</button>
+        </div>
+      </div>
+
+      <div id="importContent" hidden>
+        <div class="ext-import-manual-banner" id="manualModeBanner" hidden>
+          <span>当前处于<b>纯手动模式</b>，下方「1. 初始状态」与「2. 目标条件」的调整不会覆盖已同步角色的记忆。</span>
+          <button type="button" class="btn sm primary" id="btnResumeImport">恢复角色联动</button>
+        </div>
+
+        <div class="ext-import-toolbar">
+          <div class="ext-import-search">
+            <input type="text" id="charSearch" placeholder="搜索妮姬名称 / 英文 / 代码…">
+          </div>
+          <div class="ext-import-select">
+            <select id="charSelect" aria-label="选择已同步的妮姬"></select>
+          </div>
+          <label class="ext-import-filter">
+            <input type="checkbox" id="onlyAffixChars" checked>
+            <span>仅显示有词条</span>
+          </label>
+          <span class="ext-import-meta" id="accountMeta">—</span>
+        </div>
+
+        <div class="ext-import-main">
+          <div>
+            <div class="ext-import-section-title">
+              <span>四件装备部位切换</span>
+              <span class="hint">点击任意部位立即带入下方计算</span>
+            </div>
+            <div class="equip4-grid" id="equip4Grid"></div>
+          </div>
+          <div>
+            <div class="ext-import-section-title">
+              <span>四件装备词条汇总（全身 12 槽）</span>
+              <span class="hint" id="affixSummaryHint">高亮 = 当前计算部位</span>
+            </div>
+            <div class="affix-sum-grid" id="affixSummaryGrid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <!-- ================= 左栏：输入 ================= -->
+    <div>
+      <div class="card">
+        <div class="card-h"><div class="num">1</div><h2>初始状态（当前装备）</h2><span class="sub">预锁定 / 已有词条</span></div>
+        <div class="card-b" id="slotArea"></div>
+      </div>
+
+      <div class="card" id="presetCard">
+        <div class="card-h"><div class="num">2</div><h2>快速预设 &amp; 目标条件</h2><span class="sub">一键填入 · 最多 3 项</span></div>
+        <div class="card-b preset-b">
+          <div class="presets" id="presetArea"></div>
+          <div class="preset-note">
+            <span class="k">三选一：</span><span class="v">暴击/爆伤/弹容</span>
+            <span class="d">预设里的「三选一」指这三个词条，命中任意一项即可</span>
+          </div>
+        </div>
+        <div class="card-b req-b">
+          <div id="reqArea"></div>
+          <button type="button" class="btn ghost sm full" id="addReq" style="margin-top:6px">＋ 添加一个目标条件</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="num">3</div><h2>手动策略对比</h2><span class="sub">可选</span></div>
+        <div class="card-b">
+          <div class="row" style="margin-bottom:10px">
+            <label class="switch"><input type="checkbox" id="manualOn"><span class="slider"></span></label>
+            <span style="font-size:calc(12px + var(--fs-bump));color:var(--txt-2)">启用手动指定锁定策略</span>
+          </div>
+          <div id="manualArea" style="display:none">
+            <div class="field">
+              <label class="lbl">槽位锁定优先级 <span class="hint">（数字越小越优先）</span></label>
+              <div class="row" id="prioArea"></div>
+            </div>
+            <div class="field">
+              <label class="lbl">最多同时锁定槽位数</label>
+              <select id="manMaxLock">
+                <option value="1">1 个</option>
+                <option value="2" selected>2 个</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="lbl">阶段一只锁「已达到」的目标词条 <span class="hint">（0 = 低阶也锁）</span></label>
+              <select id="manMinBand"></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="advCard">
+        <div class="card-h adv-head" id="advHead" role="button" tabindex="0" aria-expanded="false" aria-controls="advBody">
+          <div class="num">4</div><h2>高级参数</h2>
+          <span class="sub">可编辑 · 默认收起</span>
+          <span class="adv-caret" aria-hidden="true">▾</span>
+        </div>
+        <div class="card-b" id="advBody" hidden>
+          <div class="field">
+            <label class="lbl">槽位出现概率 <span class="hint">（第 1/2/3 槽位，%）</span></label>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px" id="slotProbArea"></div>
+          </div>
+          <div class="field">
+            <label class="lbl">洗练 / 锁定成本</label>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px" id="costArea"></div>
+          </div>
+          <div class="field">
+            <label class="lbl">词条种类权重 <span class="hint">（合计须 = 100%）</span></label>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px" id="weightArea"></div>
+            <div class="mini-note" id="weightSum"></div>
+          </div>
+          <div class="field">
+            <label class="lbl">1~15 阶出现概率 <span class="hint">（合计须 = 100%）</span></label>
+            <div id="tierProbArea" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px"></div>
+            <div class="mini-note" id="tierSum"></div>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button type="button" class="btn ghost sm" id="resetParams">恢复默认参数</button>
+            <button type="button" class="btn ghost sm" id="exportCfg">复制配置 JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 右栏：结果 ================= -->
+    <div>
+      <div class="card">
+        <div class="card-h"><div class="num">★</div><h2>计算结果</h2><span class="sub" id="resultSub">—</span></div>
+        <div class="card-b" id="resultArea">
+          <div class="empty"><div class="big">◈</div>点击「开始计算」以求解最优策略</div>
+        </div>
+      </div>
+
+      <div class="card" id="detailCard" style="display:none">
+        <div class="card-h"><div class="num">⎔</div><h2>策略详情</h2><span class="sub">分步行动指南</span></div>
+        <div class="card-b">
+          <div class="tabs" id="tabs">
+            <button type="button" class="tab on" data-pane="pane-guide">分步行动指南</button>
+            <button type="button" class="tab" data-pane="pane-p2">数值洗练阶段</button>
+            <button type="button" class="tab" data-pane="pane-manual">手动策略对比</button>
+            <button type="button" class="tab" data-pane="pane-data">数值总表</button>
+            <button type="button" class="tab" data-pane="pane-sim">模拟洗练测试器</button>
+          </div>
+          <div class="tabpane on" id="pane-guide"></div>
+          <div class="tabpane" id="pane-p2"></div>
+          <div class="tabpane" id="pane-manual"></div>
+          <div class="tabpane" id="pane-data"></div>
+          <div class="tabpane" id="pane-sim"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>模型说明</b>：本工具使用<b>精确马尔可夫决策过程（MDP）</b>求解，不是蒙特卡洛近似。
+    状态为（已锁定槽位集合, 各槽位词条标签），标签携带「阶数档位」，因此「低阶暂存词条」与「已达标词条」被自然区分；
+    转移概率由「槽位出现概率 × 不放回加权的词条种类联合分布 × 阶数分布」解析枚举得到，词条种类互斥导致的动态分母也已完整建模。<br>
+    <b>阶段一</b>（变更效果）按锁定只增不减的 DAG 做精确策略迭代；<b>阶段二</b>（变更数值）按新规则求解：
+    <b>同一件装备上的数值互不相同</b>，且每次洗数值都可以「保留当前」或「应用更改」——保留不花钱、
+    不满意的结果直接丢弃。因此当前 3 个数值始终占着数值池，未锁定槽位只能从剩下 12 个阶数中不放回抽取；
+    状态取「3 个当前阶数」，达标只会增加、模型只在出现新达标时应用更改，按 |S| 从大到小一次逆推即得精确期望。
+    <b>留着低阶（高概率）数值会抬高其余槽位出高阶的概率</b>，这条收益已计入最优解。<br>
+    <b>关于锁定成本</b>：锁定消耗按「当前锁定数 → 目标锁定数」的差量收取，先免费解锁再按顺序付费（与游戏内解锁免费一致）。
+    若你认为游戏的实际收费口径不同，可在「高级参数」中修改。
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script type="module" src="calculator.js"></script>
+</body>
+</html>

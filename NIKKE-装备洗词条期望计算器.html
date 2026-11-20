@@ -1,0 +1,4317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIKKE 装备洗词条期望计算器 · T10 企业装改造</title>
+<style>
+/* =====================================================================
+   TDesign 设计规范 · 装备洗词条期望计算器
+   ---------------------------------------------------------------------
+   依据 TDesign 视觉宪法重构：
+     · 品牌色 #0052D9「信任蓝」——稳定而非活跃
+     · 圆角比例 3px(标签) → 6px(按钮/输入) → 8px(卡片) → 12px(弹窗)
+     · 组件高度 24 / 32 / 40，正文 14px，标题 600 字重（平静胜过冲击）
+     · 卡片 = 白底 + 1px #E7E7E7 边框 + 0 1px 10px rgba(0,0,0,.05)
+     · 焦点环 3px rgba(0,82,217,.2)——跨平台无障碍优先
+     · 深色不是反色：页面 #1B1B1B、容器 #242424、品牌色提亮为 #4582E6
+   ===================================================================== */
+
+/* ------------------------- 浅色（默认） ------------------------- */
+:root{
+  color-scheme:light;
+
+  /* 全局字号增量：所有 font-size 用 calc(Npx + var(--fs-bump)) 书写 */
+  --fs-bump:0px;
+
+  /* TDesign 基础令牌 */
+  --td-brand-color:#0052D9;
+  --td-brand-hover:#0957D9;
+  --td-brand-active:#003CAB;
+  --td-brand-light:#ECF2FE;
+  --td-success-color:#2BA471;
+  --td-warning-color:#E37318;
+  --td-error-color:#D54941;
+  --td-text-primary:rgba(0,0,0,.9);
+  --td-text-secondary:rgba(0,0,0,.6);
+  --td-text-placeholder:rgba(0,0,0,.35);
+  --td-bg-container:#FFFFFF;
+  --td-bg-page:#F3F3F3;
+  --td-component-border:#DCDCDC;
+  --td-component-stroke:#E7E7E7;
+  --td-shadow-1:0 1px 10px rgba(0,0,0,.05);
+  --td-shadow-2:0 3px 14px 2px rgba(0,0,0,.05);
+  --td-shadow-3:0 8px 20px rgba(0,0,0,.06);
+
+  /* 字体 */
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:"SFMono-Regular","JetBrains Mono",Consolas,"Liberation Mono",Menlo,monospace;
+
+  /* ---- 兼容别名：JS 内联样式与既有类名仍按这些名字取色 ---- */
+  --txt:var(--td-text-primary);
+  --txt-2:var(--td-text-secondary);
+  --txt-3:var(--td-text-placeholder);
+
+  --cyan:var(--td-brand-color);
+  --cyan-2:var(--td-brand-color);
+  --cyan-dim:var(--td-brand-hover);
+  --cyan-glow:rgba(0,82,217,.24);
+  --blue:var(--td-brand-color);
+  --blue-2:var(--td-brand-color);
+
+  --gold:var(--td-warning-color);
+  --gold-2:var(--td-warning-color);
+  --green:var(--td-success-color);
+  --red:var(--td-error-color);
+
+  /* 表面 */
+  --bg-page-a:var(--td-bg-page);
+  --bg-page-b:var(--td-bg-page);
+  --bg-page-c:var(--td-bg-page);
+  --bg-glow-1:transparent;
+  --bg-glow-2:transparent;
+  --bg-grid:transparent;
+  --bg-header-1:rgba(255,255,255,.96);
+  --bg-header-2:rgba(255,255,255,.92);
+  --bg-card-1:var(--td-bg-container);
+  --bg-card-2:var(--td-bg-container);
+  --bg-cardhead-1:var(--td-bg-container);
+  --bg-cardhead-2:var(--td-bg-container);
+  --bg-panel:var(--td-bg-container);
+  --bg-subcard-1:var(--td-bg-container);
+  --bg-subcard-2:var(--td-bg-container);
+  --bg-metric-1:var(--td-bg-container);
+  --bg-metric-2:var(--td-bg-container);
+  --bg-preset:var(--td-bg-container);
+  --bg-chip:#F3F3F3;
+  --bg-input:var(--td-bg-container);
+  --bg-simout:#F8F8F8;
+  --bg-thead-1:#F3F3F3;
+  --bg-thead-2:#F3F3F3;
+  --bg-matrix-th:#F3F3F3;
+  --bg-track:#EEEEEE;
+  --bg-btn-1:var(--td-bg-container);
+  --bg-btn-2:var(--td-bg-container);
+  --bg-switch:#DCDCDC;
+  --bg-switch-knob:#FFFFFF;
+  --bg-switch-on:var(--td-brand-color);
+  --bg-scroll-track:#F3F3F3;
+  --bg-scroll-thumb:#D6D6D6;
+  --bg-scroll-thumb-hover:#C0C0C0;
+
+  /* 线 */
+  --line:var(--td-component-stroke);
+  --line-2:var(--td-component-border);
+  --line-dash:var(--td-component-stroke);
+  --line-soft:#F0F0F0;
+  --line-matrix:#E7E7E7;
+
+  /* 品牌浅色阶 */
+  --tint-cy:#ECF2FE;
+  --tint-cy-2:rgba(0,82,217,.04);
+  --tint-cy-3:rgba(0,82,217,.10);
+  --tint-cy-4:rgba(0,82,217,.06);
+  --bd-cy:#BFD3F5;
+  --bd-cy-2:#B5CDF6;
+  --bd-cy-3:#D4E3FC;
+
+  /* 警告浅色阶 */
+  --tint-gd:#FFF3E9;
+  --tint-gd-2:rgba(227,115,24,.06);
+  --tint-gd-3:rgba(227,115,24,.12);
+  --bd-gd:#FBC9A4;
+  --bd-gd-2:#FAD3B5;
+  --bd-gd-3:#FBE0C8;
+
+  --tint-mute:#F3F3F3;
+
+  /* 提示条 */
+  --info-bg:#ECF2FE;
+  --info-bd:#BFD3F5;
+  --warn-bg:#FFF3E9;
+  --warn-bd:#FBC9A4;
+  --warn-txt:#A5520F;
+  --err-bg:#FFF0ED;
+  --err-bd:#F7C3BE;
+  --err-txt:#A93226;
+  --err-txt-2:rgba(169,50,38,.8);
+
+  /* 主按钮 */
+  --btn-primary-1:var(--td-brand-color);
+  --btn-primary-2:var(--td-brand-color);
+  --btn-primary-h1:var(--td-brand-hover);
+  --btn-primary-h2:var(--td-brand-hover);
+  --btn-primary-bd:var(--td-brand-color);
+  --btn-primary-fg:#FFFFFF;
+  --btn-shadow:none;
+  --btn-shadow-hover:none;
+
+  /* 其他 */
+  --shadow-card:var(--td-shadow-1);
+  --shadow-inset-top:none;
+  --lock-shadow:0 0 0 1px var(--bd-cy-2);
+  --row-hover:#ECF2FE;
+  --on-accent:#FFFFFF;
+  --radius:8px;
+
+  /* 阶数色阶：低阶中性灰 → 品牌蓝 → 近黑「顶级」 */
+  --tier1-bg:#F3F3F3;   --tier1-fg:rgba(0,0,0,.6);
+  --tier2-bg:#ECF2FE;   --tier2-fg:#0052D9;
+  --tier3-bg:#D4E3FC;   --tier3-fg:#003CAB;
+  --tier4-bg:#0052D9;   --tier4-fg:#FFFFFF;  --tier4-sh:none;
+  --tier5-bg:#003CAB;   --tier5-fg:#FFFFFF;  --tier5-sh:none;
+  --tiertop-bg:#1F1F1F; --tiertop-fg:#FFFFFF; --tiertop-sh:none;
+}
+
+/* ------------------------- 深色 ------------------------- */
+[data-theme="dark"]{
+  color-scheme:dark;
+
+  --td-brand-color:#4582E6;
+  --td-brand-hover:#5C93EA;
+  --td-brand-active:#366FD1;
+  --td-brand-light:rgba(69,130,230,.16);
+  --td-success-color:#3BAE7C;
+  --td-warning-color:#E98A3D;
+  --td-error-color:#E06A64;
+
+  --td-text-primary:rgba(255,255,255,.9);
+  --td-text-secondary:rgba(255,255,255,.6);
+  --td-text-placeholder:rgba(255,255,255,.4);
+  --td-bg-container:#242424;
+  --td-bg-page:#1B1B1B;
+  --td-component-border:#4A4A4A;
+  --td-component-stroke:#333333;
+  --td-shadow-1:0 1px 10px rgba(0,0,0,.25);
+  --td-shadow-2:0 3px 14px 2px rgba(0,0,0,.3);
+  --td-shadow-3:0 8px 20px rgba(0,0,0,.4);
+
+  --cyan-glow:rgba(69,130,230,.32);
+
+  --bg-page-a:#1B1B1B;
+  --bg-page-b:#1B1B1B;
+  --bg-page-c:#1B1B1B;
+  --bg-header-1:rgba(27,27,27,.96);
+  --bg-header-2:rgba(27,27,27,.92);
+  --bg-card-1:#242424;
+  --bg-card-2:#242424;
+  --bg-cardhead-1:#242424;
+  --bg-cardhead-2:#242424;
+  --bg-panel:#242424;
+  --bg-subcard-1:#242424;
+  --bg-subcard-2:#242424;
+  --bg-metric-1:#242424;
+  --bg-metric-2:#242424;
+  --bg-preset:#2A2A2A;
+  --bg-chip:#2A2A2A;
+  --bg-input:#2A2A2A;
+  --bg-simout:#1F1F1F;
+  --bg-thead-1:#2A2A2A;
+  --bg-thead-2:#2A2A2A;
+  --bg-matrix-th:#2A2A2A;
+  --bg-track:#3A3A3A;
+  --bg-btn-1:#2A2A2A;
+  --bg-btn-2:#2A2A2A;
+  --bg-switch:#4A4A4A;
+  --bg-switch-knob:#FFFFFF;
+  --bg-switch-on:var(--td-brand-color);
+  --bg-scroll-track:#1F1F1F;
+  --bg-scroll-thumb:#3F3F3F;
+  --bg-scroll-thumb-hover:#545454;
+
+  --line:#333333;
+  --line-2:#4A4A4A;
+  --line-dash:#333333;
+  --line-soft:#303030;
+  --line-matrix:#333333;
+
+  --tint-cy:rgba(69,130,230,.16);
+  --tint-cy-2:rgba(69,130,230,.08);
+  --tint-cy-3:rgba(69,130,230,.24);
+  --tint-cy-4:rgba(69,130,230,.12);
+  --bd-cy:rgba(69,130,230,.45);
+  --bd-cy-2:rgba(69,130,230,.55);
+  --bd-cy-3:rgba(69,130,230,.35);
+
+  --tint-gd:rgba(233,138,61,.16);
+  --tint-gd-2:rgba(233,138,61,.08);
+  --tint-gd-3:rgba(233,138,61,.18);
+  --bd-gd:rgba(233,138,61,.45);
+  --bd-gd-2:rgba(233,138,61,.5);
+  --bd-gd-3:rgba(233,138,61,.35);
+
+  --tint-mute:#2A2A2A;
+
+  --info-bg:rgba(69,130,230,.12);
+  --info-bd:rgba(69,130,230,.4);
+  --warn-bg:rgba(233,138,61,.12);
+  --warn-bd:rgba(233,138,61,.4);
+  --warn-txt:#F0A96B;
+  --err-bg:rgba(224,106,100,.12);
+  --err-bd:rgba(224,106,100,.4);
+  --err-txt:#EF9A95;
+  --err-txt-2:rgba(239,154,149,.85);
+
+  --btn-primary-1:var(--td-brand-color);
+  --btn-primary-2:var(--td-brand-color);
+  --btn-primary-h1:var(--td-brand-hover);
+  --btn-primary-h2:var(--td-brand-hover);
+  --btn-primary-bd:var(--td-brand-color);
+  --btn-primary-fg:#FFFFFF;
+
+  --shadow-card:var(--td-shadow-1);
+  --lock-shadow:0 0 0 1px var(--bd-cy-2);
+  --row-hover:rgba(69,130,230,.12);
+
+  --tier1-bg:#2A2A2A;               --tier1-fg:rgba(255,255,255,.6);
+  --tier2-bg:rgba(69,130,230,.16);  --tier2-fg:#8AB4F8;
+  --tier3-bg:rgba(69,130,230,.28);  --tier3-fg:#B3CFFB;
+  --tier4-bg:#4582E6;               --tier4-fg:#FFFFFF;
+  --tier5-bg:#2A65C0;               --tier5-fg:#FFFFFF;
+  --tiertop-bg:#E8E8E8;             --tiertop-fg:#1B1B1B;
+}
+
+/* ------------------------- 基础 ------------------------- */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--td-bg-page);
+  color:var(--td-text-primary);
+  font-family:var(--sans);
+  font-size:calc(14px + var(--fs-bump));
+  line-height:1.5714;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  transition:background-color .2s ease,color .2s ease;
+}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg-scroll-track)}
+::-webkit-scrollbar-thumb{background:var(--bg-scroll-thumb);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--bg-scroll-thumb-hover)}
+::selection{background:rgba(0,82,217,.16)}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.spin{
+  display:inline-block;width:12px;height:12px;border-radius:50%;
+  border:2px solid currentColor;border-top-color:transparent;
+  animation:tdspin .7s linear infinite;vertical-align:-1px;
+}
+@keyframes tdspin{to{transform:rotate(360deg)}}
+
+/* ------------------------- 顶栏 ------------------------- */
+header.top{
+  position:sticky;top:0;z-index:40;
+  background:var(--bg-header-1);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--td-component-stroke);
+}
+.top-in{max-width:1440px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;gap:16px}
+.logo{display:flex;align-items:center;gap:12px;min-width:0}
+.logo-mark{
+  width:32px;height:32px;flex:0 0 32px;border-radius:6px;
+  background:var(--td-brand-color);display:grid;place-items:center;
+}
+.logo-mark svg{width:18px;height:18px}
+h1{font-size:calc(20px + var(--fs-bump));font-weight:600;line-height:1.3;letter-spacing:0;color:var(--td-text-primary)}
+h1 .thin{display:block;font-size:calc(12px + var(--fs-bump));font-weight:400;color:var(--td-text-secondary);margin-top:2px;letter-spacing:0}
+.top-badge{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* 分段控件（主题切换） */
+.theme-switch{
+  display:inline-flex;align-items:center;padding:2px;gap:2px;
+  background:var(--bg-chip);border-radius:6px;
+}
+.theme-switch button{
+  display:inline-flex;align-items:center;gap:6px;
+  height:24px;padding:0 10px;border:0;border-radius:4px;
+  background:transparent;color:var(--td-text-secondary);
+  font-family:var(--sans);font-size:calc(12px + var(--fs-bump));font-weight:400;
+  cursor:pointer;white-space:nowrap;transition:background .2s,color .2s;
+}
+.theme-switch button:hover{color:var(--td-text-primary)}
+.theme-switch button[aria-pressed="true"]{
+  background:var(--td-bg-container);color:var(--td-brand-color);font-weight:500;
+  box-shadow:0 1px 3px rgba(0,0,0,.12);
+}
+.theme-switch button svg{width:12px;height:12px;flex:0 0 12px}
+.theme-switch button .ic-txt{font-size:calc(12px + var(--fs-bump));line-height:1}
+
+/* ------------------------- 布局 ------------------------- */
+.wrap{position:relative;max-width:1440px;margin:0 auto;padding:24px 24px 56px}
+#globalError{max-width:1440px;margin:0 auto;padding:0 24px}
+#globalError:empty{display:none}
+#globalError .notice{margin:16px 0 0}
+.grid{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:16px;align-items:start}
+.grid > div{min-width:0;display:flex;flex-direction:column;gap:16px}
+
+/* ------------------------- 卡片 ------------------------- */
+.card{
+  background:var(--td-bg-container);
+  border:1px solid var(--td-component-stroke);
+  border-radius:8px;
+  box-shadow:var(--td-shadow-1);
+  overflow:hidden;
+}
+.card-h{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px;border-bottom:1px solid var(--td-component-stroke);
+  background:var(--td-bg-container);
+}
+.card-h .num{
+  width:20px;height:20px;flex:0 0 20px;border-radius:4px;
+  background:var(--td-brand-light);color:var(--td-brand-color);
+  font-size:calc(12px + var(--fs-bump));font-weight:600;
+  display:grid;place-items:center;
+}
+.card-h h2{font-size:calc(16px + var(--fs-bump));font-weight:600;color:var(--td-text-primary)}
+.card-h .sub{margin-left:auto;font-size:calc(12px + var(--fs-bump));color:var(--td-text-secondary);font-weight:400}
+.card-b{padding:16px}
+
+/* 可折叠卡片 */
+.card-h.adv-head{cursor:pointer;user-select:none;transition:background .2s}
+.card-h.adv-head:hover{background:var(--td-brand-light)}
+.card-h.adv-head:focus-visible{outline:none;box-shadow:inset 0 0 0 3px rgba(0,82,217,.2)}
+.adv-caret{
+  margin-left:8px;font-size:12px;color:var(--td-text-placeholder);
+  transition:transform .2s,color .2s;
+}
+.card-h.adv-head[aria-expanded="true"] .adv-caret{transform:rotate(180deg);color:var(--td-brand-color)}
+.card-h.adv-head[aria-expanded="true"] .sub{color:var(--td-brand-color)}
+
+/* ------------------------- 表单 ------------------------- */
+.field{margin-bottom:16px}
+.field:last-child{margin-bottom:0}
+.lbl{display:block;font-size:calc(12px + var(--fs-bump));color:var(--td-text-secondary);margin-bottom:6px}
+.lbl .hint{color:var(--td-text-placeholder);font-weight:400}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=number],input[type=text],select{
+  width:100%;min-width:0;height:32px;padding:0 8px;
+  background:var(--bg-input);
+  border:1px solid var(--td-component-border);
+  border-radius:6px;
+  color:var(--td-text-primary);
+  font-family:var(--sans);font-size:calc(14px + var(--fs-bump));
+  transition:border-color .2s,box-shadow .2s;outline:none;
+}
+input[type=number]{font-family:var(--mono)}
+input:hover,select:hover{border-color:var(--td-brand-hover)}
+input:focus,select:focus{border-color:var(--td-brand-color);box-shadow:0 0 0 3px rgba(0,82,217,.2)}
+input.bad{border-color:var(--td-error-color)!important;box-shadow:0 0 0 3px rgba(213,73,65,.18)!important}
+select{cursor:pointer}
+select option{background:var(--td-bg-container);color:var(--td-text-primary)}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;
+  background:var(--td-component-border);outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--td-brand-color);cursor:pointer;box-shadow:0 0 0 3px rgba(0,82,217,.16);
+}
+
+/* 开关：TDesign 40×20 */
+.switch{position:relative;display:inline-block;width:40px;height:20px;flex:0 0 40px}
+.switch input{opacity:0;width:0;height:0}
+.slider{
+  position:absolute;inset:0;cursor:pointer;border-radius:10px;
+  background:var(--bg-switch);transition:background .2s;
+}
+.slider::before{
+  content:'';position:absolute;width:16px;height:16px;left:2px;top:2px;
+  border-radius:50%;background:var(--bg-switch-knob);transition:transform .2s;
+}
+.switch input:checked + .slider{background:var(--bg-switch-on)}
+.switch input:checked + .slider::before{transform:translateX(20px)}
+.switch input:focus-visible + .slider{box-shadow:0 0 0 3px rgba(0,82,217,.2)}
+
+/* ------------------------- 按钮 ------------------------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  height:32px;padding:0 16px;border-radius:6px;
+  border:1px solid var(--td-component-border);
+  background:var(--td-bg-container);
+  color:var(--td-text-primary);
+  font-family:var(--sans);font-size:calc(14px + var(--fs-bump));font-weight:400;
+  cursor:pointer;white-space:nowrap;
+  transition:background .2s,border-color .2s,color .2s;
+}
+.btn:hover{border-color:var(--td-brand-color);color:var(--td-brand-color);background:var(--td-brand-light)}
+.btn:active{background:var(--tint-cy-3)}
+.btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(0,82,217,.2)}
+.btn.primary{
+  background:var(--td-brand-color);border-color:var(--td-brand-color);
+  color:#FFFFFF;font-weight:500;
+}
+.btn.primary:hover{background:var(--td-brand-hover);border-color:var(--td-brand-hover);color:#FFFFFF}
+.btn.primary:active{background:var(--td-brand-active);border-color:var(--td-brand-active)}
+.btn.ghost{background:transparent;border-color:var(--td-component-border);color:var(--td-text-primary)}
+.btn.ghost:hover{border-color:var(--td-brand-color);color:var(--td-brand-color);background:var(--td-brand-light)}
+.btn.gold{background:var(--td-warning-color);border-color:var(--td-warning-color);color:#FFFFFF;font-weight:500}
+.btn.sm{height:24px;padding:0 8px;font-size:calc(12px + var(--fs-bump));border-radius:3px}
+.btn.full{width:100%}
+
+/* ------------------------- 槽位 ------------------------- */
+.slot{
+  border:1px solid var(--td-component-stroke);
+  border-radius:8px;
+  background:var(--td-bg-container);
+  padding:12px;margin-bottom:12px;
+  transition:border-color .2s,box-shadow .2s;
+}
+.slot:last-child{margin-bottom:0}
+.slot.locked{border-color:var(--bd-cy-2);box-shadow:var(--lock-shadow)}
+.slot-h{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.slot-tag{
+  font-size:calc(12px + var(--fs-bump));font-weight:600;letter-spacing:.2px;
+  color:var(--td-brand-color);background:var(--td-brand-light);
+  padding:2px 8px;border-radius:3px;
+}
+.slot-chance{font-size:calc(12px + var(--fs-bump));color:var(--td-text-secondary)}
+.slot-h .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.lock-label{font-size:calc(12px + var(--fs-bump));color:var(--td-text-secondary)}
+.slot-grid{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:8px}
+.slot-tier{display:flex;flex-direction:column;gap:4px}
+.tier-val{font-size:calc(12px + var(--fs-bump));color:var(--td-text-secondary);font-family:var(--mono);text-align:center}
+.slot-badge{font-size:calc(12px + var(--fs-bump));padding:1px 8px;border-radius:3px;white-space:nowrap}
+.slot-badge.ok{color:var(--td-success-color);background:rgba(43,164,113,.1)}
+.slot-badge.no{color:var(--td-warning-color);background:var(--tint-gd)}
+
+/* ------------------------- 目标条件 ------------------------- */
+.req{
+  border:1px solid var(--td-component-stroke);
+  border-radius:8px;padding:12px;margin-bottom:12px;
+  background:var(--td-bg-container);
+  transition:border-color .2s;
+}
+.req:last-of-type{margin-bottom:8px}
+.req-h{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.req-idx{
+  flex:0 0 auto;height:20px;padding:0 8px;border-radius:3px;
+  background:var(--td-brand-light);color:var(--td-brand-color);
+  font-size:calc(12px + var(--fs-bump));font-weight:600;
+  display:inline-flex;align-items:center;white-space:nowrap;
+}
+.req-h .ttl{font-size:calc(14px + var(--fs-bump));font-weight:500;color:var(--td-text-primary)}
+.req-h .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.cands{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.cand{
+  display:flex;align-items:center;gap:8px;
+  min-height:32px;padding:4px 10px;border-radius:6px;
+  border:1px solid var(--td-component-border);
+  background:var(--td-bg-container);
+  font-size:calc(14px + var(--fs-bump));color:var(--td-text-primary);
+  cursor:pointer;user-select:none;
+  transition:border-color .2s,background .2s,color .2s;
+}
+.cand:hover{border-color:var(--td-brand-color);background:var(--td-brand-light)}
+.cand.on{border-color:var(--td-brand-color);background:var(--td-brand-light);color:var(--td-brand-color)}
+.cand input{display:none}
+.cand .dot{
+  width:14px;height:14px;flex:0 0 14px;border-radius:3px;
+  border:1px solid var(--td-component-border);background:var(--td-bg-container);
+  display:grid;place-items:center;font-size:10px;color:#FFFFFF;
+}
+.cand.on .dot{background:var(--td-brand-color);border-color:var(--td-brand-color)}
+.req-tier{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.req-tier select{width:auto;min-width:128px;flex:0 0 auto}
+.tier-preview{
+  font-size:calc(12px + var(--fs-bump));font-family:var(--mono);
+  color:var(--td-brand-color);padding:2px 8px;border-radius:3px;
+  background:var(--td-brand-light);
+}
+.tier-preview .p{color:var(--td-text-secondary);font-family:var(--sans);font-size:calc(12px + var(--fs-bump))}
+.range{flex:1;min-width:120px;display:flex;align-items:center;gap:8px}
+
+/* 多选一说明 */
+.req-multi-note{
+  display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
+  margin:-4px 0 10px;font-size:calc(12px + var(--fs-bump));
+  color:var(--td-text-secondary);line-height:1.5;
+}
+.req-multi-note .k{color:var(--td-text-secondary);font-weight:500}
+.req-multi-note .v{color:var(--td-warning-color);font-family:var(--mono);font-weight:500}
+
+/* ------------------------- 预设 ------------------------- */
+.card-b.preset-b{padding:16px 16px 12px}
+.card-b.req-b{padding:16px;border-top:1px solid var(--td-component-stroke)}
+.presets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.preset{
+  display:flex;align-items:center;gap:8px;width:100%;
+  padding:8px 10px;border-radius:6px;
+  border:1px solid var(--td-component-border);
+  background:var(--td-bg-container);
+  font-family:var(--sans);color:var(--td-text-primary);
+  cursor:pointer;text-align:left;
+  transition:border-color .2s,background .2s,color .2s;
+}
+.preset:hover{border-color:var(--td-brand-color);background:var(--td-brand-light);color:var(--td-brand-color)}
+.preset:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(0,82,217,.2)}
+.preset .ico{
+  width:20px;height:20px;flex:0 0 20px;border-radius:3px;
+  display:grid;place-items:center;font-size:12px;
+  background:var(--td-brand-light);color:var(--td-brand-color);
+}
+.preset .nm{font-size:calc(14px + var(--fs-bump));font-weight:400;line-height:1.35;text-align:left;word-break:break-word}
+.preset.chip-preset{padding:6px 10px;min-height:32px}
+.preset.chip-preset .nm{font-size:calc(13px + var(--fs-bump));font-weight:400}
+.preset.chip-preset:hover{transform:none}
+.preset-note{
+  display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
+  margin-top:12px;padding-top:12px;
+  border-top:1px solid var(--td-component-stroke);
+  font-size:calc(12px + var(--fs-bump));color:var(--td-text-secondary);line-height:1.55;
+}
+.preset-note .k{color:var(--td-text-secondary);font-weight:500}
+.preset-note .v{color:var(--td-warning-color);font-family:var(--mono);font-weight:500}
+.preset-note .d{color:var(--td-text-placeholder)}
+
+/* ------------------------- 提示条 ------------------------- */
+.notice{
+  display:flex;gap:10px;align-items:flex-start;
+  border:1px solid;border-radius:6px;padding:12px 16px;
+  font-size:calc(14px + var(--fs-bump));line-height:1.5714;
+  margin-bottom:16px;
+}
+.notice .ic{font-size:calc(16px + var(--fs-bump));line-height:1.3;flex:0 0 auto}
+.notice.info{border-color:var(--info-bd);background:var(--info-bg);color:var(--td-brand-color)}
+.notice.warn{border-color:var(--warn-bd);background:var(--warn-bg);color:var(--warn-txt)}
+.notice.err{border-color:var(--err-bd);background:var(--err-bg);color:var(--err-txt)}
+.notice.err strong{display:block;margin-bottom:4px;font-weight:600;font-size:calc(14px + var(--fs-bump));color:var(--td-error-color)}
+.notice.err ul{margin:4px 0 0 18px;font-size:calc(13px + var(--fs-bump));color:var(--err-txt-2)}
+.notice.err li{margin:2px 0}
+
+/* ------------------------- 指标卡 ------------------------- */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:16px}
+.metric{
+  position:relative;
+  background:var(--td-bg-container);
+  border:1px solid var(--td-component-stroke);
+  border-radius:8px;
+  padding:16px 16px 12px;
+  box-shadow:var(--td-shadow-1);
+}
+.metric::before{content:'';position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 2px 2px 0;background:var(--td-component-border)}
+.metric .k{font-size:calc(12px + var(--fs-bump));color:var(--td-text-secondary);margin-bottom:8px;font-weight:400}
+.metric .v{
+  font-family:var(--mono);font-size:calc(28px + var(--fs-bump));font-weight:600;
+  line-height:1.15;color:var(--td-text-primary);letter-spacing:-.5px;
+}
+.metric .u{margin-left:4px;font-size:calc(13px + var(--fs-bump));font-weight:400;color:var(--td-text-secondary);font-family:var(--sans)}
+.metric .x{font-size:calc(12px + var(--fs-bump));color:var(--td-text-secondary);margin-top:6px;font-family:var(--mono)}
+.metric .bar{height:4px;border-radius:2px;background:var(--bg-track);margin-top:12px;overflow:hidden;display:flex}
+.metric .bar i{display:block;height:100%}
+.metric.blue::before{background:var(--td-brand-color)}
+.metric.blue .v{color:var(--td-brand-color)}
+.metric.gold::before{background:var(--td-warning-color)}
+
+/* ------------------------- 面板 / 键值 ------------------------- */
+.panel{
+  border:1px solid var(--td-component-stroke);
+  border-radius:8px;padding:16px;
+  background:var(--td-bg-container);
+}
+.panel h3{
+  display:flex;align-items:center;gap:8px;
+  font-size:calc(16px + var(--fs-bump));font-weight:600;
+  color:var(--td-text-primary);margin-bottom:12px;
+}
+.panel h3 .tag{
+  font-size:calc(12px + var(--fs-bump));font-weight:400;
+  padding:0 6px;height:20px;line-height:20px;border-radius:3px;
+  background:var(--td-brand-light);color:var(--td-brand-color);
+}
+.panel h3 .tag.gd{background:var(--tint-gd);color:var(--td-warning-color)}
+.kv{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:8px 0;border-bottom:1px solid var(--td-component-stroke);
+  font-size:calc(14px + var(--fs-bump));
+}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--td-text-secondary)}
+.kv .v{font-family:var(--mono);font-weight:500;color:var(--td-text-primary);text-align:right}
+.kv .v.cy{color:var(--td-brand-color)}
+.kv .v.gd{color:var(--td-warning-color)}
+.kv .v.rd{color:var(--td-error-color)}
+.kv .v.gr{color:var(--td-success-color)}
+
+/* ------------------------- 表格 ------------------------- */
+.tbl-wrap{
+  overflow:auto;border:1px solid var(--td-component-stroke);
+  border-radius:6px;margin-bottom:12px;
+}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:calc(14px + var(--fs-bump))}
+thead th{
+  position:sticky;top:0;z-index:2;
+  background:var(--td-bg-page);
+  padding:10px 12px;text-align:left;
+  font-size:calc(12px + var(--fs-bump));font-weight:600;
+  color:var(--td-text-secondary);
+  border-bottom:1px solid var(--td-component-stroke);
+  white-space:nowrap;
+}
+tbody td{
+  padding:10px 12px;border-bottom:1px solid var(--td-component-stroke);
+  vertical-align:middle;color:var(--td-text-primary);
+}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--row-hover)}
+tbody td.num{font-family:var(--mono);text-align:right;white-space:nowrap}
+tbody td.mid{text-align:center}
+tbody td.nm{font-weight:500}
+tr.best td{background:var(--td-brand-light)}
+tr.best:hover td{background:var(--tint-cy-3)}
+
+/* 数值总表（矩阵） */
+.matrix{width:100%;border-collapse:separate;border-spacing:0;font-size:calc(12px + var(--fs-bump));min-width:860px}
+.matrix th,.matrix td{padding:6px 8px;border-bottom:1px solid var(--td-component-stroke);text-align:center}
+.matrix th{
+  background:var(--bg-matrix-th);font-size:calc(12px + var(--fs-bump));font-weight:600;
+  color:var(--td-text-secondary);white-space:nowrap;position:static;
+}
+.matrix td.nm{text-align:left;white-space:nowrap;font-size:calc(13px + var(--fs-bump));font-weight:500}
+.matrix input{width:100%;min-width:48px;height:24px;padding:0 4px;font-size:calc(12px + var(--fs-bump));text-align:center;font-family:var(--mono)}
+.matrix tbody tr:hover td{background:transparent}
+
+/* 阶数徽标 */
+.tier-pill{
+  display:inline-block;min-width:36px;text-align:center;
+  font-family:var(--mono);font-size:calc(12px + var(--fs-bump));font-weight:500;
+  padding:1px 6px;border-radius:3px;
+}
+.tier-1{background:var(--tier1-bg);color:var(--tier1-fg)}
+.tier-2{background:var(--tier2-bg);color:var(--tier2-fg)}
+.tier-3{background:var(--tier3-bg);color:var(--tier3-fg)}
+.tier-4{background:var(--tier4-bg);color:var(--tier4-fg);box-shadow:var(--tier4-sh)}
+.tier-5{background:var(--tier5-bg);color:var(--tier5-fg);box-shadow:var(--tier5-sh)}
+.tier-top{background:var(--tiertop-bg);color:var(--tiertop-fg);box-shadow:var(--tiertop-sh)}
+
+/* 状态标签 */
+.tag-lock{
+  display:inline-block;font-size:calc(12px + var(--fs-bump));font-weight:400;
+  padding:1px 8px;border-radius:3px;white-space:nowrap;
+}
+.tag-lock.yes{background:var(--td-brand-light);color:var(--td-brand-color)}
+.tag-lock.no{background:var(--bg-chip);color:var(--td-text-secondary)}
+.tag-lock.p2{background:var(--tint-gd);color:var(--td-warning-color)}
+.tag-lock.ok{background:rgba(43,164,113,.1);color:var(--td-success-color)}
+
+/* ------------------------- 标签页 ------------------------- */
+.tabs{
+  display:flex;gap:0;flex-wrap:wrap;
+  border-bottom:1px solid var(--td-component-stroke);
+  margin:-16px -16px 0;padding:0 16px;
+  background:var(--td-bg-container);
+}
+.tab{
+  position:relative;height:48px;padding:0 16px;
+  border:0;border-bottom:2px solid transparent;background:none;
+  font-family:var(--sans);font-size:calc(14px + var(--fs-bump));font-weight:400;
+  color:var(--td-text-secondary);cursor:pointer;
+  transition:color .2s,border-color .2s;
+}
+.tab:hover{color:var(--td-brand-color)}
+.tab.on{color:var(--td-brand-color);font-weight:500;border-bottom-color:var(--td-brand-color)}
+.tab:focus-visible{outline:none;box-shadow:inset 0 0 0 3px rgba(0,82,217,.2)}
+.tabpane{display:none;padding:16px 0 0}
+.tabpane.on{display:block}
+
+/* ------------------------- 步骤 / 提示小字 ------------------------- */
+.step{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--td-component-stroke)}
+.step:last-child{border-bottom:none}
+.step-n{
+  width:24px;height:24px;flex:0 0 24px;border-radius:50%;
+  background:var(--td-brand-light);color:var(--td-brand-color);
+  font-size:calc(12px + var(--fs-bump));font-weight:600;
+  display:grid;place-items:center;
+}
+.step-c{min-width:0;flex:1}
+.step-c .t{font-size:calc(14px + var(--fs-bump) + 1px);font-weight:500;color:var(--td-text-primary);margin-bottom:4px}
+.step-c .d{font-size:calc(13px + var(--fs-bump) + 1px);color:var(--td-text-secondary);line-height:1.7}
+.mini-note{font-size:calc(12px + var(--fs-bump));color:var(--td-text-secondary);line-height:1.6;margin-top:8px}
+.hint{font-size:calc(12px + var(--fs-bump));color:var(--td-text-placeholder);font-weight:400}
+/* 空态提示（注意：.slot 解锁时也会带 empty 类，需排除） */
+.empty:not(.slot){text-align:center;padding:48px 24px;color:var(--td-text-placeholder);font-size:calc(14px + var(--fs-bump))}
+.empty:not(.slot) .big{font-size:32px;margin-bottom:8px;opacity:.35}
+
+/* ------------------------- 模拟器 ------------------------- */
+.progress{height:4px;background:var(--bg-track);border-radius:2px;overflow:hidden;margin:12px 0}
+.progress i{display:block;height:100%;width:0;background:var(--td-brand-color);transition:width .1s}
+.sim-out{
+  font-family:var(--mono);font-size:calc(13px + var(--fs-bump));
+  background:var(--bg-simout);border:1px solid var(--td-component-stroke);
+  border-radius:6px;padding:12px;max-height:240px;overflow-y:auto;
+  line-height:1.8;white-space:pre-wrap;word-break:break-word;
+  color:var(--td-text-primary);
+}
+.sim-out .ok{color:var(--td-success-color)}
+.sim-out .warn{color:var(--td-warning-color)}
+.sim-out .dim{color:var(--td-text-placeholder)}
+.sim-out .cy{color:var(--td-brand-color)}
+
+/* ------------------------- 页脚 ------------------------- */
+.foot{
+  margin-top:24px;padding-top:16px;
+  border-top:1px solid var(--td-component-stroke);
+  font-size:calc(12px + var(--fs-bump));line-height:1.8;
+  color:var(--td-text-secondary);
+}
+.foot b{color:var(--td-text-primary);font-weight:500}
+
+/* ------------------------- 响应式 ------------------------- */
+@media(max-width:1200px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:768px){
+  .wrap{padding:16px 16px 40px}
+  .top-in{padding:10px 16px;height:auto;flex-wrap:wrap;gap:8px}
+  .logo{flex:1 1 100%;min-width:0}
+  .top-badge{width:100%;margin-left:0}
+  .theme-switch button{flex:1 1 auto;justify-content:center}
+  .theme-switch{flex:1 1 auto}
+  .cands{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tabpane{padding:12px 0 0}
+  .card-b{padding:12px}
+  .tabs{margin:-12px -12px 0;padding:0 12px}
+  h1{font-size:calc(17px + var(--fs-bump))}
+  .slot-grid{grid-template-columns:minmax(0,1fr) 84px}
+}
+@media(max-width:576px){
+  .metrics{grid-template-columns:minmax(0,1fr)}
+  .presets{grid-template-columns:minmax(0,1fr)}
+  .req-h .ttl{white-space:normal}
+}
+
+@media (prefers-reduced-motion:no-preference){
+  .card,.btn,.preset,.cand,.tab,.slot{will-change:auto}
+}
+
+</style>
+<meta name="theme-color" id="metaThemeColor" content="#080b12">
+<!-- 主题解析必须在首屏渲染前执行，避免闪白/闪黑 -->
+<script>
+/* =====================================================================
+ * 主题控制：Auto / Dark / Light
+ * ---------------------------------------------------------------------
+ * - 首次打开且 localStorage 无记录 → 读 matchMedia 系统偏好
+ * - Auto 模式下监听系统变化，实时无感同步
+ * - 手动选择后写入 localStorage，下次优先读取
+ * - 在 <head> 里同步执行，避免首屏闪白/闪黑（FOUC）
+ * ===================================================================== */
+(function () {
+  'use strict';
+
+  var STORAGE_KEY = 'nikke-calc-theme';
+  var MEDIA = '(prefers-color-scheme: dark)';
+  var root = document.documentElement;
+  var mql = window.matchMedia ? window.matchMedia(MEDIA) : null;
+
+  function systemTheme() {
+    return (mql && mql.matches) ? 'dark' : 'light';
+  }
+
+  function readPref() {
+    try {
+      var v = localStorage.getItem(STORAGE_KEY);
+      if (v === 'auto' || v === 'dark' || v === 'light') return v;
+    } catch (e) { /* 隐私模式 / file:// 限制：静默降级 */ }
+    return 'auto';
+  }
+
+  function writePref(v) {
+    try { localStorage.setItem(STORAGE_KEY, v); } catch (e) { /* 写入失败不影响使用 */ }
+  }
+
+  var pref = readPref();
+
+  /** 解析当前应生效的实际主题 */
+  function effective() {
+    return pref === 'auto' ? systemTheme() : pref;
+  }
+
+  /** 把解析结果写到 <html data-theme> 与 meta[theme-color] */
+  function apply() {
+    var t = effective();
+    if (root.getAttribute('data-theme') !== t) root.setAttribute('data-theme', t);
+    var meta = document.getElementById('metaThemeColor');
+    if (meta) meta.setAttribute('content', t === 'light' ? '#F3F3F3' : '#1B1B1B');
+    syncButtons();
+    return t;
+  }
+
+  function syncButtons() {
+    var btns = document.querySelectorAll('[data-theme-set]');
+    for (var i = 0; i < btns.length; i++) {
+      var b = btns[i];
+      var on = b.getAttribute('data-theme-set') === pref;
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      if (on) b.classList.add('on'); else b.classList.remove('on');
+    }
+    var lab = document.getElementById('themeNow');
+    if (lab) {
+      var t = effective();
+      lab.textContent = pref === 'auto'
+        ? '自动 · 当前' + (t === 'dark' ? '暗色' : '日间')
+        : (t === 'dark' ? '暗色' : '日间');
+    }
+  }
+
+  function setPref(v) {
+    pref = (v === 'dark' || v === 'light' || v === 'auto') ? v : 'auto';
+    writePref(pref);
+    apply();
+  }
+
+  /* ---- 系统主题实时监听 ---- */
+  if (mql) {
+    var onChange = function () { if (pref === 'auto') apply(); };
+    if (typeof mql.addEventListener === 'function') mql.addEventListener('change', onChange);
+    else if (typeof mql.addListener === 'function') mql.addListener(onChange);  // 旧版 Safari
+  }
+
+  /* ---- 首次执行（在 head 中，DOM 尚未解析完也可用） ---- */
+  apply();
+
+  /* ---- 对外 API ---- */
+  window.ThemeCtl = {
+    get pref() { return pref; },
+    get resolved() { return effective(); },
+    set: setPref,
+    toggle: function () { setPref(effective() === 'dark' ? 'light' : 'dark'); },
+    /** 若用户从未手动选择，则回到跟随系统 */
+    reset: function () { try { localStorage.removeItem(STORAGE_KEY); } catch (e) {} pref = 'auto'; apply(); },
+    apply: apply
+  };
+
+  /* ---- DOM 就绪后绑定按钮 ---- */
+  function bind() {
+    var btns = document.querySelectorAll('[data-theme-set]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', function () {
+        setPref(this.getAttribute('data-theme-set'));
+      });
+    }
+    syncButtons();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bind);
+  } else {
+    bind();
+  }
+})();
+</script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="top-in">
+      <div class="logo">
+        <div class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#04141d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M12 22V12"/><path d="m3 7 9 5 9-5"/>
+          </svg>
+        </div>
+        <h1>NIKKE 装备洗词条期望计算器
+          <span class="thin">企业装词条洗练</span>
+        </h1>
+      </div>
+      <div class="top-badge">
+        <div class="theme-switch" role="group" aria-label="界面主题">
+          <button type="button" data-theme-set="auto" aria-pressed="true" title="跟随系统外观">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span class="ic-txt">自动</span>
+          </button>
+          <button type="button" data-theme-set="dark" aria-pressed="false" title="暗色主题">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span class="ic-txt">暗色</span>
+          </button>
+          <button type="button" data-theme-set="light" aria-pressed="false" title="日间主题">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><span class="ic-txt">日间</span>
+          </button>
+          <span class="sr" id="themeNow" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="globalError"></div>
+
+  <div class="grid">
+    <!-- ================= 左栏：输入 ================= -->
+    <div>
+      <div class="card">
+        <div class="card-h"><div class="num">1</div><h2>初始状态（当前装备）</h2><span class="sub">预锁定 / 已有词条</span></div>
+        <div class="card-b" id="slotArea"></div>
+      </div>
+
+      <div class="card" id="presetCard">
+        <div class="card-h"><div class="num">2</div><h2>快速预设 &amp; 目标条件</h2><span class="sub">一键填入 · 最多 3 项</span></div>
+        <div class="card-b preset-b">
+          <div class="presets" id="presetArea"></div>
+          <div class="preset-note">
+            <span class="k">三选一：</span><span class="v">暴击/爆伤/弹容</span>
+            <span class="d">预设里的「三选一」指这三个词条，命中任意一项即可</span>
+          </div>
+        </div>
+        <div class="card-b req-b">
+          <div id="reqArea"></div>
+          <button class="btn ghost sm full" id="addReq" style="margin-top:6px">＋ 添加一个目标条件</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="num">3</div><h2>手动策略对比</h2><span class="sub">可选</span></div>
+        <div class="card-b">
+          <div class="row" style="margin-bottom:10px">
+            <label class="switch"><input type="checkbox" id="manualOn"><span class="slider"></span></label>
+            <span style="font-size:calc(12px + var(--fs-bump));color:var(--txt-2)">启用手动指定锁定策略</span>
+          </div>
+          <div id="manualArea" style="display:none">
+            <div class="field">
+              <label class="lbl">槽位锁定优先级 <span class="hint">（数字越小越优先）</span></label>
+              <div class="row" id="prioArea"></div>
+            </div>
+            <div class="field">
+              <label class="lbl">最多同时锁定槽位数</label>
+              <select id="manMaxLock">
+                <option value="1">1 个</option>
+                <option value="2" selected>2 个</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="lbl">阶段一只锁「已达到」的目标词条 <span class="hint">（0 = 低阶也锁）</span></label>
+              <select id="manMinBand"></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="advCard">
+        <div class="card-h adv-head" id="advHead" role="button" tabindex="0" aria-expanded="false" aria-controls="advBody">
+          <div class="num">4</div><h2>高级参数</h2>
+          <span class="sub">可编辑 · 默认收起</span>
+          <span class="adv-caret" aria-hidden="true">▾</span>
+        </div>
+        <div class="card-b" id="advBody" hidden>
+          <div class="field">
+            <label class="lbl">槽位出现概率 <span class="hint">（第 1/2/3 槽位，%）</span></label>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px" id="slotProbArea"></div>
+          </div>
+          <div class="field">
+            <label class="lbl">洗练 / 锁定成本</label>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px" id="costArea"></div>
+          </div>
+          <div class="field">
+            <label class="lbl">词条种类权重 <span class="hint">（合计须 = 100%）</span></label>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px" id="weightArea"></div>
+            <div class="mini-note" id="weightSum"></div>
+          </div>
+          <div class="field">
+            <label class="lbl">1~15 阶出现概率 <span class="hint">（合计须 = 100%）</span></label>
+            <div id="tierProbArea" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px"></div>
+            <div class="mini-note" id="tierSum"></div>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn ghost sm" id="resetParams">恢复默认参数</button>
+            <button class="btn ghost sm" id="exportCfg">复制配置 JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 右栏：结果 ================= -->
+    <div>
+      <div class="card">
+        <div class="card-h"><div class="num">★</div><h2>计算结果</h2><span class="sub" id="resultSub">—</span></div>
+        <div class="card-b" id="resultArea">
+          <div class="empty"><div class="big">◈</div>点击「开始计算」以求解最优策略</div>
+        </div>
+      </div>
+
+      <div class="card" id="detailCard" style="display:none">
+        <div class="card-h"><div class="num">⎔</div><h2>策略详情</h2><span class="sub">分步行动指南</span></div>
+        <div class="card-b">
+          <div class="tabs" id="tabs">
+            <button class="tab on" data-pane="pane-guide">分步行动指南</button>
+            <button class="tab" data-pane="pane-p2">数值洗练阶段</button>
+            <button class="tab" data-pane="pane-manual">手动策略对比</button>
+            <button class="tab" data-pane="pane-data">数值总表</button>
+            <button class="tab" data-pane="pane-sim">模拟洗练测试器</button>
+          </div>
+          <div class="tabpane on" id="pane-guide"></div>
+          <div class="tabpane" id="pane-p2"></div>
+          <div class="tabpane" id="pane-manual"></div>
+          <div class="tabpane" id="pane-data"></div>
+          <div class="tabpane" id="pane-sim"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>模型说明</b>：本工具使用<b>精确马尔可夫决策过程（MDP）</b>求解，不是蒙特卡洛近似。
+    状态为（已锁定槽位集合, 各槽位词条标签），标签携带「阶数档位」，因此「低阶暂存词条」与「已达标词条」被自然区分；
+    转移概率由「槽位出现概率 × 不放回加权的词条种类联合分布 × 阶数分布」解析枚举得到，词条种类互斥导致的动态分母也已完整建模。<br>
+    <b>阶段一</b>（变更效果）按锁定只增不减的 DAG 做精确策略迭代；<b>阶段二</b>（变更数值）按新规则求解：
+    <b>同一件装备上的数值互不相同</b>，且每次洗数值都可以「保留当前」或「应用更改」——保留不花钱、
+    不满意的结果直接丢弃。因此当前 3 个数值始终占着数值池，未锁定槽位只能从剩下 12 个阶数中不放回抽取；
+    状态取「3 个当前阶数」，达标只会增加、模型只在出现新达标时应用更改，按 |S| 从大到小一次逆推即得精确期望。
+    <b>留着低阶（高概率）数值会抬高其余槽位出高阶的概率</b>，这条收益已计入最优解。<br>
+    <b>关于锁定成本</b>：锁定消耗按「当前锁定数 → 目标锁定数」的差量收取，先免费解锁再按顺序付费（与游戏内解锁免费一致）。
+    若你认为游戏的实际收费口径不同，可在「高级参数」中修改。
+  </div>
+</div>
+
+<script>
+/*!
+ * NIKKE T10 装备洗词条 —— 精确期望计算引擎 v1.0
+ * ---------------------------------------------------------------------------
+ * 纯 JS，无 DOM 依赖，可在浏览器 / Node 中直接运行。
+ *
+ * 【模型概述】
+ *   两个阶段：
+ *     阶段一「变更效果」：重掷未锁定槽位的 种类 + 阶数。
+ *     阶段二「变更数值」：保留种类，重掷未锁定槽位的阶数。
+ *   状态 = (已锁定槽位集合 mask, 已锁定槽位的词条标签 labels)
+ *     词条标签 = (种类 type, 档位 band)，band = 该种类"满足了几条最低阶数要求"。
+ *     band 天然区分了"低阶暂存词条"与"已达标词条"。
+ *
+ *   阶段一是一个有限状态马尔可夫链：动作 = 本次洗练要额外锁定哪些槽位。
+ *   由于锁定只增不减（解锁后重锁不会带来任何信息优势），状态图是 DAG，
+ *   按 |mask| 降序即可一次求解，得到精确期望。
+ *
+ *   阶段二在"达标槽位一律锁定、未达标槽位解锁重掷"的假设下也是 DAG，
+ *   逐层精确求和。该假设与游戏常规打法一致（不会主动重刷已达标的词条）。
+ *
+ *   所有概率均为解析枚举：
+ *     槽位出现概率 × 不放回加权的联合概率 × 阶数分布
+ *   不使用蒙特卡洛近似。
+ *
+ * 【成本向量】统一 5 分量，便于任意线性组合：
+ *   [0] 阶段一洗练石头  [1] 阶段二洗练石头  [2] 锁定石头
+ *   [3] 阶段一洗练次数  [4] 阶段二洗练次数
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) { module.exports = factory(); }
+  else { root.NIKKE_ENGINE = factory(); }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  /* =========================================================================
+   * 0. 常量
+   * ========================================================================= */
+  var VERSION = '1.0.0';
+  var TIER_MAX = 15;
+  var ABSENT = 0;                 // 槽位没有出现词条
+  var JUNK = 145;                 // 非目标种类的合并标签
+  var INF = 1e15;
+  var NC = 5;
+
+  function lab(type, band) { return 1 + type * 16 + band; }
+  function labType(l) { return Math.floor((l - 1) / 16); }
+  function labBand(l) { return (l - 1) % 16; }
+
+  /* =========================================================================
+   * 1. 默认数据
+   * ========================================================================= */
+  var TYPE_DEFS = [
+    { id: 'elite', name: '优越代码伤害', abbr: '优', weight: 10,
+      values: [9.54, 10.94, 12.34, 13.75, 15.15, 16.55, 17.95, 19.35, 20.75, 22.15, 23.56, 24.96, 26.36, 27.76, 29.16] },
+    { id: 'hit', name: '命中率', abbr: '命', weight: 12,
+      values: [4.77, 5.47, 6.18, 6.88, 7.59, 8.29, 8.99, 9.70, 10.40, 11.11, 11.81, 12.51, 13.22, 13.92, 14.63] },
+    { id: 'ammo', name: '最大装弹数', abbr: '弹', weight: 12,
+      values: [27.84, 31.93, 36.05, 40.16, 44.28, 48.39, 52.50, 56.60, 60.71, 64.82, 68.93, 73.04, 77.15, 81.26, 85.37] },
+    { id: 'atk', name: '攻击力', abbr: '攻', weight: 10,
+      values: [4.77, 5.47, 6.18, 6.88, 7.59, 8.29, 8.99, 9.70, 10.40, 11.11, 11.81, 12.51, 13.22, 13.92, 14.63] },
+    { id: 'chg', name: '蓄力伤害', abbr: '蓄', weight: 12,
+      values: [4.77, 5.47, 6.18, 6.88, 7.59, 8.29, 8.99, 9.70, 10.40, 11.11, 11.81, 12.51, 13.22, 13.92, 14.63] },
+    { id: 'spd', name: '蓄力速度', abbr: '速', weight: 12,
+      values: [1.98, 2.28, 2.57, 2.86, 3.16, 3.45, 3.75, 4.04, 4.33, 4.63, 4.92, 5.22, 5.51, 5.80, 6.09] },
+    { id: 'cdmg', name: '暴击伤害', abbr: '伤', weight: 12,
+      values: [6.64, 7.62, 8.60, 9.58, 10.56, 11.54, 12.52, 13.50, 14.48, 15.46, 16.44, 17.42, 18.40, 19.38, 20.36] },
+    { id: 'crit', name: '暴击率', abbr: '率', weight: 10,
+      values: [2.30, 2.64, 2.98, 3.32, 3.66, 4.00, 4.34, 4.68, 5.02, 5.34, 5.70, 6.04, 6.38, 6.72, 7.07] },
+    { id: 'def', name: '防御力', abbr: '防', weight: 10,
+      values: [4.77, 5.47, 6.18, 6.88, 7.59, 8.29, 8.99, 9.70, 10.40, 11.11, 11.81, 12.51, 13.22, 13.92, 14.63] }
+  ];
+  var DEFAULT_TIER_PROBS = [12, 12, 12, 12, 12, 7, 7, 7, 7, 7, 1, 1, 1, 1, 1];
+  var DEFAULT_SLOT_PROBS = [100, 50, 30];
+
+  function defaultConfig() {
+    return {
+      types: TYPE_DEFS.map(function (t) {
+        return { id: t.id, name: t.name, abbr: t.abbr, weight: t.weight, values: t.values.slice() };
+      }),
+      tierProbs: DEFAULT_TIER_PROBS.slice(),
+      slotProbs: DEFAULT_SLOT_PROBS.slice(),
+      costs: { base: 1, lock1: 2, lock2: 3, lock3: 4, extra: 1 },
+      reqs: [
+        { cands: ['atk'], minTier: 1 },
+        { cands: ['elite'], minTier: 1 },
+        { cands: ['ammo'], minTier: 1 }
+      ]
+    };
+  }
+
+  function defaultStart() {
+    return { slots: [
+      { type: null, tier: 1, locked: false },
+      { type: null, tier: 1, locked: false },
+      { type: null, tier: 1, locked: false }
+    ] };
+  }
+
+  /* =========================================================================
+   * 2. 工具
+   * ========================================================================= */
+  function num(x, d) {
+    var v = (typeof x === 'number') ? x : parseFloat(x);
+    if (!isFinite(v)) return (d === undefined ? 0 : d);
+    return v;
+  }
+  function isBad(x) {
+    if (x === '' || x === null || x === undefined) return true;
+    var v = parseFloat(x);
+    return !isFinite(v);
+  }
+  function pc(x) { var c = 0; while (x) { c += x & 1; x >>= 1; } return c; }
+  function rnd(n, d) { var p = Math.pow(10, d); return Math.round(n * p) / p; }
+  function v0() { return [0, 0, 0, 0, 0]; }
+  function vadd(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3], a[4] + b[4]]; }
+  function vmul(a, k) { return [a[0] * k, a[1] * k, a[2] * k, a[3] * k, a[4] * k]; }
+  function addTo(a, b, k) {
+    a[0] += b[0] * k; a[1] += b[1] * k; a[2] += b[2] * k; a[3] += b[3] * k; a[4] += b[4] * k;
+    return a;
+  }
+  function tot(v) { return v[0] + v[1] + v[2]; }
+  function isInf(v) { return !isFinite(tot(v)) || tot(v) >= INF / 2; }
+
+  /* =========================================================================
+   * 3. 参数校验
+   * ========================================================================= */
+  function validateConfig(cfg) {
+    var errors = [];
+    if (!cfg || !cfg.types || !cfg.reqs) { return ['配置对象不完整。']; }
+    var i, j;
+
+    // --- 词条权重 ---
+    var wsum = 0, badW = false;
+    for (i = 0; i < cfg.types.length; i++) {
+      if (isBad(cfg.types[i].weight)) badW = true;
+      var w = num(cfg.types[i].weight, 0);
+      if (w < 0) badW = true;
+      wsum += w;
+    }
+    if (cfg.types.length !== 9) errors.push('词条种类必须为 9 种（游戏中固定 9 种词条）。');
+    if (badW) errors.push('词条种类权重存在空值或负数。');
+    if (Math.abs(wsum - 100) > 1e-6) errors.push('词条种类权重合计必须为 100%，当前为 ' + rnd(wsum, 3) + '%。');
+
+    // --- 阶数概率 ---
+    var tsum = 0, badT = false;
+    if (!cfg.tierProbs || cfg.tierProbs.length !== TIER_MAX) {
+      errors.push('阶数概率表必须包含 1~15 阶共 15 个数值。');
+    } else {
+      for (i = 0; i < TIER_MAX; i++) {
+        if (isBad(cfg.tierProbs[i])) badT = true;
+        var p = num(cfg.tierProbs[i], 0);
+        if (p < 0) badT = true;
+        tsum += p;
+      }
+      if (badT) errors.push('阶数概率存在空值或负数。');
+      if (Math.abs(tsum - 100) > 1e-6) errors.push('阶数概率合计必须为 100%，当前为 ' + rnd(tsum, 3) + '%。');
+    }
+
+    // --- 槽位概率 ---
+    if (!cfg.slotProbs || cfg.slotProbs.length !== 3) {
+      errors.push('槽位出现概率必须为 3 个数值。');
+    } else {
+      for (i = 0; i < 3; i++) {
+        if (isBad(cfg.slotProbs[i])) { errors.push('第 ' + (i + 1) + ' 槽位出现概率为空值。'); continue; }
+        var sp = num(cfg.slotProbs[i], 0);
+        if (sp < 0 || sp > 100) errors.push('第 ' + (i + 1) + ' 槽位出现概率必须位于 0%~100% 之间。');
+      }
+    }
+
+    // --- 成本 ---
+    var c = cfg.costs || {};
+    var ckeys = [['base', '单次基础洗练消耗'], ['lock1', '第 1 个锁定消耗'], ['lock2', '第 2 个锁定消耗'],
+                 ['lock3', '第 3 个锁定消耗'], ['extra', '锁定后每次额外消耗']];
+    for (i = 0; i < ckeys.length; i++) {
+      if (isBad(c[ckeys[i][0]])) { errors.push('成本参数「' + ckeys[i][1] + '」不能为空。'); continue; }
+      if (num(c[ckeys[i][0]], 0) < 0) errors.push('成本参数「' + ckeys[i][1] + '」不能为负数。');
+    }
+    if (num(c.lock3, 0) < num(c.lock2, 0) || num(c.lock2, 0) < num(c.lock1, 0)) {
+      errors.push('锁定成本应满足：第 1 个锁 ≤ 第 2 个锁 ≤ 第 3 个锁。');
+    }
+
+    // --- 目标 ---
+    var reqs = cfg.reqs || [];
+    var nameOf = function (id) {
+      for (var k = 0; k < cfg.types.length; k++) if (cfg.types[k].id === id) return cfg.types[k].name;
+      return id;
+    };
+    if (reqs.length < 1) errors.push('请至少设置 1 个目标词条条件。');
+    if (reqs.length > 3) errors.push('目标条件最多 3 项（装备仅有 3 个槽位）。');
+    for (i = 0; i < reqs.length; i++) {
+      var r = reqs[i];
+      if (!r.cands || !r.cands.length) { errors.push('第 ' + (i + 1) + ' 项目标未选择任何候选词条。'); continue; }
+      var mt = num(r.minTier, 0);
+      if (isBad(r.minTier) || mt < 1 || mt > TIER_MAX || Math.floor(mt) !== mt) {
+        errors.push('第 ' + (i + 1) + ' 项目标的最低阶数必须为 1~15 的整数。');
+      }
+      for (j = 0; j < r.cands.length; j++) {
+        var ti = -1;
+        for (var k2 = 0; k2 < cfg.types.length; k2++) if (cfg.types[k2].id === r.cands[j]) ti = k2;
+        if (ti < 0) errors.push('第 ' + (i + 1) + ' 项目标包含未知词条。');
+        else if (num(cfg.types[ti].weight, 0) <= 0) {
+          errors.push('第 ' + (i + 1) + ' 项目标包含「' + cfg.types[ti].name + '」，但该词条权重为 0，永远无法洗出。');
+        }
+      }
+      if (!isBad(r.minTier) && mt >= 1 && mt <= TIER_MAX) {
+        var pg = 0;
+        for (var q = mt - 1; q < TIER_MAX; q++) pg += num((cfg.tierProbs || [])[q], 0);
+        if (pg <= 0) errors.push('第 ' + (i + 1) + ' 项目标要求 ≥' + mt + ' 阶，但该阶数区间概率为 0，永远无法达成。');
+      }
+    }
+
+    // --- 目标可行性（互斥）---
+    if (errors.length === 0) {
+      var idx = function (id) {
+        for (var k = 0; k < cfg.types.length; k++) if (cfg.types[k].id === id) return k;
+        return -1;
+      };
+      var reqTypes = [];
+      for (i = 0; i < reqs.length; i++) {
+        var arr = [];
+        for (j = 0; j < reqs[i].cands.length; j++) {
+          var t2 = idx(reqs[i].cands[j]);
+          if (t2 >= 0) arr.push(t2);
+        }
+        reqTypes.push(arr);
+      }
+      if (!canAssignDistinct(reqTypes, 0, {})) {
+        errors.push('目标条件无法同时满足：同件装备的词条种类互斥，请检查是否重复要求了同一种词条。');
+      }
+      var strictMap = {};
+      for (i = 0; i < reqTypes.length; i++) {
+        if (reqTypes[i].length === 1) {
+          var key = reqTypes[i][0];
+          if (strictMap[key] !== undefined) {
+            errors.push('「' + nameOf(reqs[strictMap[key]].cands[0]) + '」被第 ' + (strictMap[key] + 1) +
+              ' 项与第 ' + (i + 1) + ' 项重复要求，但同名词条不可能同时出现在两个槽位。');
+          }
+          strictMap[key] = i;
+        }
+      }
+
+      /* --- 数值唯一性：各目标的阶数要求必须能落到互不相同的阶数上 ---
+         同一件装备不会出现两个相同数值，所以 N 条目标最多占用 N 个不同阶数，
+         从高到低排第 k 高的要求不能超过 15 - (k - 1)。 */
+      var mins = [];
+      for (i = 0; i < reqs.length; i++) mins.push(Math.round(num(reqs[i].minTier, 1)));
+      mins.sort(function (a, b) { return b - a; });
+      for (i = 0; i < mins.length; i++) {
+        if (mins[i] > TIER_MAX - i) {
+          errors.push('目标无法同时达成：同一件装备的数值互不相同，' + (i + 1) + ' 条目标都要求 ≥' + mins[i] +
+            ' 阶时需要 ' + (i + 1) + ' 个不同阶数，但 ≥' + mins[i] + ' 阶只剩 ' + (TIER_MAX - mins[i] + 1) + ' 个档位。');
+          break;
+        }
+      }
+    }
+    return errors;
+  }
+
+  function canAssignDistinct(reqTypes, ri, used) {
+    if (ri >= reqTypes.length) return true;
+    var arr = reqTypes[ri];
+    for (var i = 0; i < arr.length; i++) {
+      var t = arr[i];
+      if (used[t]) continue;
+      used[t] = 1;
+      if (canAssignDistinct(reqTypes, ri + 1, used)) { used[t] = 0; return true; }
+      used[t] = 0;
+    }
+    return false;
+  }
+
+  /* =========================================================================
+   * 4. 模型构建
+   * ========================================================================= */
+  function createModel(cfg) {
+    var types = cfg.types;
+    var n = types.length;
+    var weights = [], wsum = 0, i, j, t;
+    for (i = 0; i < n; i++) { weights.push(num(types[i].weight, 0)); wsum += weights[i]; }
+
+    var tierRaw = [], tsum = 0;
+    for (i = 0; i < TIER_MAX; i++) { tierRaw.push(num(cfg.tierProbs[i], 0)); tsum += tierRaw[i]; }
+    if (tsum <= 0) tsum = 1;
+    var tp = tierRaw.map(function (p) { return p / tsum; });
+
+    var slotP = cfg.slotProbs.map(function (p) { return Math.max(0, Math.min(1, num(p, 0) / 100)); });
+
+    var reqs = [];
+    for (i = 0; i < cfg.reqs.length; i++) {
+      var r = cfg.reqs[i], cands = [], cs = {};
+      for (j = 0; j < r.cands.length; j++) {
+        for (t = 0; t < n; t++) if (types[t].id === r.cands[j]) { cands.push(t); cs[t] = 1; }
+      }
+      reqs.push({ cands: cands, candSet: cs, minTier: Math.round(num(r.minTier, 1)), index: i });
+    }
+
+    // 每种词条的阶数阈值集合 → 档位（band）
+    var thrByType = [];
+    for (t = 0; t < n; t++) thrByType.push([]);
+    for (i = 0; i < reqs.length; i++) {
+      for (j = 0; j < reqs[i].cands.length; j++) {
+        t = reqs[i].cands[j];
+        if (thrByType[t].indexOf(reqs[i].minTier) < 0) thrByType[t].push(reqs[i].minTier);
+      }
+    }
+
+    var bandTable = [], bandProbs = [], bandCount = [], reqNeed = [], isTarget = [], targetTypes = [];
+    for (t = 0; t < n; t++) {
+      thrByType[t].sort(function (a, b) { return a - b; });
+      var thr = thrByType[t];
+      var bt = [], bp = [];
+      for (i = 0; i < TIER_MAX; i++) {
+        var tier = i + 1, band = 0;
+        for (var k = 0; k < thr.length; k++) if (tier >= thr[k]) band++;
+        bt.push(band);
+      }
+      for (i = 0; i <= thr.length; i++) bp.push(0);
+      for (i = 0; i < TIER_MAX; i++) bp[bt[i]] += tp[i];
+      bandTable.push(bt);
+      bandProbs.push(bp);
+      bandCount.push(thr.length + 1);
+      isTarget.push(thr.length > 0);
+      if (thr.length > 0) targetTypes.push(t);
+      var needArr = [];
+      for (i = 0; i < reqs.length; i++) needArr.push(0);
+      reqNeed.push(needArr);
+    }
+    for (i = 0; i < reqs.length; i++) {
+      for (j = 0; j < reqs[i].cands.length; j++) {
+        t = reqs[i].cands[j];
+        reqNeed[t][i] = thrByType[t].indexOf(reqs[i].minTier) + 1;
+      }
+    }
+
+    var costs = {
+      base: num(cfg.costs.base, 1),
+      lock: [num(cfg.costs.lock1, 2), num(cfg.costs.lock2, 3), num(cfg.costs.lock3, 4)],
+      extra: num(cfg.costs.extra, 1)
+    };
+
+    var labelList = [];
+    for (t = 0; t < n; t++) {
+      var ls = [];
+      if (isTarget[t]) for (var b = 0; b < bandCount[t]; b++) ls.push(lab(t, b));
+      labelList.push(ls);
+    }
+
+    return {
+      n: n, types: types, weights: weights, wsum: wsum, tp: tp, slotP: slotP,
+      reqs: reqs, nReqs: reqs.length, thrByType: thrByType,
+      bandTable: bandTable, bandProbs: bandProbs, bandCount: bandCount,
+      reqNeed: reqNeed, isTarget: isTarget, targetTypes: targetTypes,
+      labelList: labelList, costs: costs,
+      // 每次建模独立缓存，避免不同配置之间串味
+      _branchCache: (typeof Map !== 'undefined') ? new Map() : null,
+      _p2Cache: (typeof Map !== 'undefined') ? new Map() : null,
+      name: function (t) { return (t >= 0 && t < n) ? types[t].name : '—'; },
+      abbr: function (t) { return (t >= 0 && t < n) ? types[t].abbr : '—'; }
+    };
+  }
+
+  function probGE(model, minTier) {
+    var m = Math.max(1, Math.min(TIER_MAX, Math.round(minTier)));
+    var s = 0;
+    for (var i = m - 1; i < TIER_MAX; i++) s += model.tp[i];
+    return s;
+  }
+  function tierProb(model, tier) {
+    var k = Math.max(1, Math.min(TIER_MAX, Math.round(tier))) - 1;
+    return model.tp[k];
+  }
+  function bandOfTier(model, t, tier) {
+    var k = Math.max(1, Math.min(TIER_MAX, Math.round(tier))) - 1;
+    return model.bandTable[t][k];
+  }
+  function isTargetLabel(model, l) {
+    if (l === ABSENT) return false;
+    var t = labType(l);
+    return t >= 0 && t < model.n && model.isTarget[t];
+  }
+  function typeSatisfies(model, l, r) {
+    if (l === ABSENT) return false;
+    var t = labType(l);
+    if (t < 0 || t >= model.n) return false;
+    return model.reqNeed[t][r] > 0;
+  }
+  function bandSatisfies(model, l, r) {
+    if (l === ABSENT) return false;
+    var t = labType(l);
+    if (t < 0 || t >= model.n) return false;
+    var need = model.reqNeed[t][r];
+    return need > 0 && labBand(l) >= need;
+  }
+  function maxBandLabel(model, t) { return lab(t, model.bandCount[t] - 1); }
+
+  /* =========================================================================
+   * 5. 单次「变更效果」的精确联合分布
+   * ========================================================================= */
+  var branchCache = (typeof Map !== 'undefined') ? new Map() : null;
+
+  /**
+   * 枚举一次「变更效果」后，未锁定槽位的全部可能结果。
+   * @param model
+   * @param unlocked 未锁定槽位下标数组（升序）
+   * @param excludedMask 已被锁定占用的种类位掩码
+   * @returns [{p, labels:[...]}]  labels 顺序与 unlocked 一致
+   */
+  function buildBranches(model, unlocked, excludedMask) {
+    var n = model.n;
+    var L = unlocked.length;
+    if (L === 0) return [{ p: 1, labels: [] }];
+
+    var branchCache = model._branchCache;
+    var cacheKey = unlocked.join(',') + '|' + excludedMask;
+    if (branchCache && branchCache.has(cacheKey)) return branchCache.get(cacheKey);
+
+    var remW = 0, t;
+    for (t = 0; t < n; t++) {
+      if (excludedMask & (1 << t)) continue;
+      if (model.weights[t] <= 0) continue;
+      remW += model.weights[t];
+    }
+
+    var map = {}, out = [];
+    var labels = [];
+
+    function pushLeaf(p) {
+      var key = 0, i;
+      for (i = 0; i < L; i++) key = key * 200 + labels[i];
+      if (map[key] === undefined) { map[key] = out.length; out.push({ p: 0, labels: labels.slice() }); }
+      out[map[key]].p += p;
+    }
+
+    function rec(i, drawn, wLeft, p) {
+      if (i === L) { pushLeaf(p); return; }
+      var s = unlocked[i];
+      var ap = model.slotP[s];
+      if (ap < 1 - 1e-12) {
+        labels.push(ABSENT);
+        rec(i + 1, drawn, wLeft, p * (1 - ap));
+        labels.pop();
+      }
+      if (ap <= 0 || wLeft <= 0) return;
+      for (var k = 0; k < n; k++) {
+        if (excludedMask & (1 << k)) continue;
+        if (drawn & (1 << k)) continue;
+        var w = model.weights[k];
+        if (w <= 0) continue;
+        var pType = ap * (w / wLeft);
+        var nextW = wLeft - w;
+        var bp = model.bandProbs[k];
+        var tg = model.isTarget[k];
+        for (var b = 0; b < bp.length; b++) {
+          if (bp[b] <= 0) continue;
+          labels.push(tg ? lab(k, b) : JUNK);
+          rec(i + 1, drawn | (1 << k), nextW, p * pType * bp[b]);
+          labels.pop();
+        }
+      }
+    }
+
+    if (remW <= 0) {
+      var res0 = [{ p: 1, labels: [] }];
+      for (var z = 0; z < L; z++) res0[0].labels.push(ABSENT);
+      return res0;
+    }
+    rec(0, 0, remW, 1);
+    out.sort(function (a, b) { return b.p - a.p; });
+
+    // 合并极端小概率分支，防止数值噪声
+    var merged = [];
+    for (var i2 = 0; i2 < out.length; i2++) {
+      if (out[i2].p < 1e-13) continue;
+      merged.push(out[i2]);
+    }
+    if (!merged.length) merged = out.slice(0, 1);
+
+    if (branchCache) branchCache.set(cacheKey, merged);
+    return merged;
+  }
+
+  /* =========================================================================
+   * 6. 目标 ↔ 槽位 的可行分配
+   * ========================================================================= */
+  function completeAssignments(model, view) {
+    var R = model.nReqs;
+    var res = [], assign = [], used = [false, false, false];
+    function rec(r) {
+      if (r === R) { res.push(assign.slice()); return; }
+      for (var s = 0; s < 3; s++) {
+        if (used[s]) continue;
+        if (!typeSatisfies(model, view[s], r)) continue;
+        used[s] = true;
+        assign.push({ req: r, slot: s });
+        rec(r + 1);
+        assign.pop();
+        used[s] = false;
+      }
+    }
+    rec(0);
+    return res;
+  }
+
+  /* 判断一个"锁定标签 + 可用空槽"的组合是否还有解 */
+  function statePossible(model, lockedLabelsBySlot, mask, availSlots) {
+    var R = model.nReqs;
+    var usedSlot = [false, false, false];
+    var usedType = {};
+    var s, i;
+    for (s = 0; s < 3; s++) {
+      if (!(mask & (1 << s))) continue;
+      var l = lockedLabelsBySlot[s];
+      if (l === ABSENT) continue;
+      usedType[labType(l)] = 1;
+    }
+    function rec(r) {
+      if (r === R) return true;
+      for (var s2 = 0; s2 < 3; s2++) {
+        if (usedSlot[s2]) continue;
+        var ll = lockedLabelsBySlot[s2];
+        if (!(mask & (1 << s2)) && !(availSlots & (1 << s2))) continue;
+        if (!typeSatisfies(model, ll, r)) continue;
+        usedSlot[s2] = true;
+        var ok = rec(r + 1);
+        usedSlot[s2] = false;
+        if (ok) return true;
+      }
+      for (var t = 0; t < model.n; t++) {
+        if (usedType[t]) continue;
+        if (!(model.reqNeed[t][r] > 0)) continue;
+        if (model.weights[t] <= 0) continue;
+        // 至少存在一个"未锁定槽位"能洗出该种类
+        var can = false;
+        for (var s3 = 0; s3 < 3; s3++) {
+          if (mask & (1 << s3)) continue;
+          if (!(availSlots & (1 << s3))) continue;
+          if (model.slotP[s3] <= 0) continue;
+          can = true;
+        }
+        if (!can) continue;
+        usedType[t] = 1;
+        var ok2 = rec(r + 1);
+        usedType[t] = 0;
+        if (ok2) return true;
+      }
+      return false;
+    }
+    return rec(0);
+  }
+
+  /* =========================================================================
+   * 7. 阶段二：变更数值（保留 / 应用 二选一 · 精确动态规划）
+   * -------------------------------------------------------------------------
+   * 规则（按玩家补充）：每次「变更数值」会先给出新数值，玩家可以「保留当前」
+   *      或「应用更改」；同一件装备上不会出现两个相同数值。
+   *      · 所以不锁定也能一直保留当前词条（拒绝即保留），只是要付洗练费；
+   *      · 当前 3 个数值都占着池子 → 未锁定槽位只能从剩下的 12 个阶数里抽；
+   *      · 把低阶（出现率高）的数值留着，就把最常见的档位挡在池外，
+   *        其余槽位抽到高阶的概率随之提高 —— 这正是「先留存高概率低数值词条」；
+   *      · 只有新数值达标时才「应用」并锁定，此刻才付锁定费。
+   * 状态：n 个互不相同的当前阶数（达标集合由阶数直接决定）→ S 只增不减，
+   *      按 |S| 从大到小一次逆推即得精确期望。
+   * 成本：每次 = base + (已达标锁定数 + 额外锁定数) × extra；应用新达标时付锁定费。
+   * ========================================================================= */
+  function lockDeltaCost(model, fromCount, toCount) {
+    var s = 0;
+    for (var k = fromCount; k < toCount; k++) {
+      s += model.costs.lock[Math.min(k, model.costs.lock.length - 1)];
+    }
+    return s;
+  }
+
+  function buildPhase2(model, assignment, extraLocked) {
+    var n = assignment.length;
+    var full = (1 << n) - 1;
+    var i, k, t;
+    var m = [];
+    for (i = 0; i < n; i++) {
+      m.push(Math.max(1, Math.min(15, Math.round(model.reqs[assignment[i].req].minTier))));
+    }
+
+    var p2Cache = model._p2Cache;
+    var key = assignment.map(function (a) { return a.slot + ':' + a.req; }).join(',') + '|' + extraLocked;
+    if (p2Cache && p2Cache.has(key)) return p2Cache.get(key);
+
+    function toll(kLocked) { return model.costs.base + (kLocked + extraLocked) * model.costs.extra; }
+    function lockPay(fromCount, toCount) { return lockDeltaCost(model, fromCount + extraLocked, toCount + extraLocked); }
+
+    function satOf(vals) {
+      var s = 0;
+      for (var k2 = 0; k2 < n; k2++) if (vals[k2] >= m[k2]) s |= (1 << k2);
+      return s;
+    }
+    function codeOf(vals) {
+      var c = 0;
+      for (var k3 = 0; k3 < n; k3++) c = c * 16 + vals[k3];
+      return c;
+    }
+    /* 把任意外部给的阶数整理成「n 个互不相同、1..15」的合法状态 */
+    function normVals(vals) {
+      var out = [], used = {};
+      for (var k4 = 0; k4 < n; k4++) {
+        var v = Math.round((vals && vals[k4]) || m[k4]);
+        if (!(v >= 1)) v = 1;
+        if (v > 15) v = 15;
+        while (used[v] && v < 15) v++;
+        while (used[v] && v > 1) v--;
+        used[v] = 1;
+        out.push(v);
+      }
+      return out;
+    }
+
+    /* ---- 状态：n 个互不相同的阶数 ---- */
+    var states = [], idxOf = {};
+    (function rec(k5, vals, used) {
+      if (k5 === n) {
+        var c = codeOf(vals);
+        idxOf[c] = states.length;
+        states.push({ vals: vals.slice(), code: c, S: satOf(vals) });
+        return;
+      }
+      for (var tt = 1; tt <= 15; tt++) {
+        if (used & (1 << tt)) continue;
+        if (model.tp[tt - 1] <= 0) continue;
+        vals.push(tt);
+        rec(k5 + 1, vals, used | (1 << tt));
+        vals.pop();
+      }
+    })(0, [], 0);
+
+    var nS = states.length;
+    var C2 = new Float64Array(nS);    // 洗练石
+    var CL = new Float64Array(nS);    // 锁定石
+    var CR = new Float64Array(nS);    // 洗数值次数
+
+    /* 不放回抽取：unlocked 个槽位从「去掉 exclMask 后的阶数池」依次抽（权重按出现率） */
+    var drawCache = {};
+    function drawsFor(unlocked, exclMask) {
+      var ck = unlocked.join(',') + '|' + exclMask;
+      if (drawCache[ck]) return drawCache[ck];
+      if (!unlocked.length) { drawCache[ck] = [{ tiers: [], p: 1 }]; return drawCache[ck]; }
+      var totalW = 0;
+      for (t = 1; t <= 15; t++) {
+        if (exclMask & (1 << t)) continue;
+        if (model.tp[t - 1] > 0) totalW += model.tp[t - 1];
+      }
+      if (totalW <= 0) { drawCache[ck] = [{ tiers: [], p: 1 }]; return drawCache[ck]; }
+      var out = [], acc = [];
+      (function rec2(idx, left, p, used) {
+        if (idx === unlocked.length) { out.push({ tiers: acc.slice(), p: p }); return; }
+        if (left <= 1e-15) return;
+        for (var v = 1; v <= 15; v++) {
+          if (exclMask & (1 << v)) continue;
+          if (used & (1 << v)) continue;
+          var w = model.tp[v - 1];
+          if (w <= 0) continue;
+          acc.push(v);
+          rec2(idx + 1, left - w, p * (w / left), used | (1 << v));
+          acc.pop();
+        }
+      })(0, totalW, 1, 0);
+      drawCache[ck] = out;
+      return out;
+    }
+
+    /* ---- 逆推：按 |S| 从大到小 ---- */
+    var order = [];
+    for (i = 0; i < nS; i++) order.push(i);
+    order.sort(function (a, b) { return pc(states[b].S) - pc(states[a].S); });
+
+    for (var oi = 0; oi < nS; oi++) {
+      var id = order[oi];
+      var st = states[id];
+      if (st.S === full) { C2[id] = 0; CL[id] = 0; CR[id] = 0; continue; }
+      var unlocked = [];
+      for (i = 0; i < n; i++) if (!(st.S & (1 << i))) unlocked.push(i);
+      /* 当前所有数值都在装备上 → 整池排除；未锁定槽位从剩余阶数中不放回抽取 */
+      var excl = 0;
+      for (i = 0; i < n; i++) excl |= (1 << st.vals[i]);
+      var draws = null;
+      var rollCost = toll(pc(st.S));
+      var accC2 = 0, accCL = 0, accR = 0, pReject = 0;
+      /* 就地递归枚举「不放回抽取」的结果，避免为每个状态分配数组 */
+      var pool = [], pw = [], psum = 0;
+      for (t = 1; t <= 15; t++) {
+        if (excl & (1 << t)) continue;
+        if (model.tp[t - 1] <= 0) continue;
+        pool.push(t);
+        pw.push(model.tp[t - 1]);
+        psum += model.tp[t - 1];
+      }
+      var baseCode = st.code, unit = [];
+      var u0 = 1;
+      for (i = n - 1; i >= 0; i--) { unit[i] = u0; u0 *= 16; }
+
+      (function walk(idx, left, p, used, code, S2) {
+        if (idx === unlocked.length) {
+          if (S2 === st.S) { pReject += p; return; }
+          var fee = (S2 === full) ? 0 : lockPay(pc(st.S), pc(S2));
+          var nid = idxOf[code];
+          accC2 += p * C2[nid];
+          accCL += p * (fee + CL[nid]);
+          accR += p * (1 + CR[nid]);
+          return;
+        }
+        if (left <= 1e-15) return;
+        var si = unlocked[idx];
+        var oldCode = Math.floor(code / unit[si]) % 16;
+        for (var pi = 0; pi < pool.length; pi++) {
+          var v = pool[pi];
+          if (used & (1 << v)) continue;
+          var w = pw[pi];
+          var nc = code + (v - oldCode) * unit[si];
+          var ns = S2;
+          if (v >= m[si]) ns |= (1 << si);
+          walk(idx + 1, left - w, p * (w / left), used | (1 << v), nc, ns);
+        }
+      })(0, psum, 1, excl, baseCode, st.S);
+
+      var den = 1 - pReject;
+      if (den <= 1e-12) { C2[id] = INF; CL[id] = INF; CR[id] = INF; continue; }
+      C2[id] = (rollCost + accC2) / den;
+      CL[id] = accCL / den;
+      CR[id] = (1 + accR) / den;
+    }
+
+    var tbl = {
+      assignment: assignment, n: n, full: full, m: m, extraLocked: extraLocked,
+      q: m.map(function (mm) { return probGE(model, mm); }),
+      toll: toll,
+      lockPay: lockPay,
+      states: states,
+      /* 从「当前阶数组合」出发的阶段二期望（已达标槽位按已锁定计） */
+      get: function (S0, vals) {
+        var nv = normVals(vals);
+        var id = idxOf[codeOf(nv)];
+        if (id === undefined) return [INF, INF, INF, INF, INF];
+        if (states[id].S === full) return [0, 0, 0, 0, 0];
+        return [0, C2[id], CL[id], 0, CR[id]];
+      },
+      lockSetOf: function (S0) { return S0; },
+      stop: function (S0) { return S0 === full; },
+      /* 报告用：给定当前阶数组合，返回逐槽边际达标率与「本轮至少提升一个」的概率 */
+      stats: function (S0, vals) {
+        var nv = normVals(vals);
+        var S = satOf(nv);
+        var excl = 0, k6;
+        for (k6 = 0; k6 < n; k6++) excl |= (1 << nv[k6]);
+        var un = [], draws, per = [], pNone = 0;
+        for (k6 = 0; k6 < n; k6++) if (!(S & (1 << k6))) un.push(k6);
+        for (k6 = 0; k6 < n; k6++) per.push(0);
+        draws = drawsFor(un, excl);
+        for (var d2 = 0; d2 < draws.length; d2++) {
+          var any = false;
+          for (var u2 = 0; u2 < un.length; u2++) {
+            if (draws[d2].tiers[u2] >= m[un[u2]]) { any = true; per[un[u2]] += draws[d2].p; }
+          }
+          if (!any) pNone += draws[d2].p;
+        }
+        return { q: per, probImprove: 1 - pNone, S: S };
+      }
+    };
+
+    if (p2Cache) p2Cache.set(key, tbl);
+    return tbl;
+  }
+
+  /* 高斯消元：A 为 n*n 行主序，B 为 n*k，返回解 */
+  function solveLinear(A, B, n, k) {
+    var i, j, p, c;
+    for (i = 0; i < n; i++) {
+      var maxv = Math.abs(A[i * n + i]), piv = i;
+      for (j = i + 1; j < n; j++) {
+        if (Math.abs(A[j * n + i]) > maxv) { maxv = Math.abs(A[j * n + i]); piv = j; }
+      }
+      if (maxv < 1e-14) continue;
+      if (piv !== i) {
+        for (c = 0; c < n; c++) { var t1 = A[i * n + c]; A[i * n + c] = A[piv * n + c]; A[piv * n + c] = t1; }
+        for (c = 0; c < k; c++) { var t2 = B[i * k + c]; B[i * k + c] = B[piv * k + c]; B[piv * k + c] = t2; }
+      }
+      var d = A[i * n + i];
+      for (j = i + 1; j < n; j++) {
+        var f = A[j * n + i] / d;
+        if (f === 0) continue;
+        for (c = i; c < n; c++) A[j * n + c] -= f * A[i * n + c];
+        for (c = 0; c < k; c++) B[j * k + c] -= f * B[i * k + c];
+      }
+    }
+    for (i = n - 1; i >= 0; i--) {
+      var dd = A[i * n + i];
+      for (c = 0; c < k; c++) {
+        var sum = B[i * k + c];
+        for (j = i + 1; j < n; j++) sum -= A[i * n + j] * B[j * k + c];
+        B[i * k + c] = Math.abs(dd) < 1e-14 ? 0 : sum / dd;
+      }
+    }
+    return B;
+  }
+
+  /* 标签 → 该槽位当前阶数的最小一致取值（band 是按「最低阶数要求」切的档）
+     阶段一的标签只保留档位，这里取「恰好落进该档的最小阶数」作为代表值。 */
+  function labelTier(model, l) {
+    if (!l || l === ABSENT || l === JUNK) return 0;
+    var t = labType(l), b = labBand(l);
+    if (t < 0 || t >= model.n) return 0;
+    var thr = model.thrByType[t];
+    if (!thr || !thr.length) return 0;
+    if (b <= 0) return 1;                       // 未达任何门槛 → 取该档下界
+    return thr[Math.min(b, thr.length) - 1];
+  }
+
+  /* 把「目标槽位视图」转成一组互不相同的当前数值：
+     已达标的槽位取恰好达标的阶数，未达标的槽位取最低的空闲阶数（保证不达标）。 */
+  function tiersFromView(model, a, view) {
+    var n = a.length, out = [], used = {}, i, v;
+    for (i = 0; i < n; i++) {
+      var req = model.reqs[a[i].req];
+      var mt = Math.max(1, Math.min(15, Math.round(req.minTier)));
+      var sat = bandSatisfies(model, view[a[i].slot], a[i].req);
+      v = sat ? Math.max(mt, labelTier(model, view[a[i].slot]) || mt) : 0;
+      if (sat) { while (used[v] && v < 15) v++; }
+      out.push(v);
+      if (sat) used[v] = 1;
+    }
+    for (i = 0; i < n; i++) {
+      if (out[i] > 0) continue;
+      var mt2 = Math.max(1, Math.min(15, Math.round(model.reqs[a[i].req].minTier)));
+      v = 1;
+      while (v < mt2 && used[v]) v++;
+      if (v >= mt2) v = Math.max(1, mt2 - 1);
+      used[v] = 1;
+      out[i] = v;
+    }
+    return out;
+  }
+
+  /* 由"当前视图 + 当前锁定"求阶段二最优成本向量 */
+  function phase2Entry(model, view, mask, fixedMask) {
+    var asg = completeAssignments(model, view);
+    if (!asg.length) return null;
+    var best = null, bestInfo = null;
+    for (var ai = 0; ai < asg.length; ai++) {
+      var a = asg[ai];
+      var S = 0, L = 0, used = 0, i;
+      var vals = [0, 0, 0];
+      for (i = 0; i < a.length; i++) {
+        used |= (1 << a[i].slot);
+        if (bandSatisfies(model, view[a[i].slot], a[i].req)) S |= (1 << i);
+        if (mask & (1 << a[i].slot)) L |= (1 << i);
+        vals[i] = labelTier(model, view[a[i].slot]);
+      }
+      L = L & S;   // 未达标却被锁定的槽位：免费解锁
+      var extraLocked = 0;
+      for (var s = 0; s < 3; s++) {
+        if (fixedMask & (1 << s)) extraLocked++;
+        else if ((mask & (1 << s)) && !(used & (1 << s))) extraLocked++;
+      }
+      var tbl = buildPhase2(model, a, extraLocked);
+      var valsT = tiersFromView(model, a, view);
+      var v = tbl.get(S, valsT);
+      if (isInf(v)) continue;
+      /* 阶段二要求「达标即锁定」：把当前已达标但还没锁的槽位补锁上 */
+      var pay = (S === (1 << tbl.n) - 1) ? 0 : lockDeltaCost(model, pc(L) + extraLocked, pc(S) + extraLocked);
+      v = [v[0], v[1], v[2] + pay, v[3], v[4]];
+      if (best === null || tot(v) < tot(best)) {
+        best = v;
+        bestInfo = { tbl: tbl, S: S, L: L, asg: a, extraLocked: extraLocked, vals: vals, pay: pay };
+      }
+    }
+    if (best && bestInfo) best._info = bestInfo;
+    return best;
+  }
+
+  /* =========================================================================
+   * 8. 阶段一：有限状态马尔可夫决策过程（DAG）
+   * ========================================================================= */
+  function keyOf(mask, labels) {
+    var k = mask;
+    for (var i = 0; i < labels.length; i++) k = k * 200 + labels[i];
+    return k;
+  }
+  function labelsAt(mask, view) {
+    var out = [];
+    for (var s = 0; s < 3; s++) if (mask & (1 << s)) out.push(view[s]);
+    return out;
+  }
+  function asView(mask, labels) {
+    var view = [ABSENT, ABSENT, ABSENT], li = 0;
+    for (var s = 0; s < 3; s++) if (mask & (1 << s)) view[s] = labels[li++];
+    return view;
+  }
+
+  function createPhase1(model, fixedMask, fixedLabels, baseMask, baseLabels) {
+    var fixedCount = pc(fixedMask);
+    var maxLock = 3;                    // 理论上最多锁 3 个；实际由"可洗槽位≥1"约束
+    baseMask = baseMask || 0;           // 玩家进入本阶段时已经锁住的槽位（不会被重洗）
+    baseLabels = baseLabels || [];
+    var states = [];
+    var byKey = {};
+
+    // 生成所有 mask：必须包含 baseMask（玩家的锁定是既定事实，不可被"清空"）
+    var masks = [];
+    for (var m = 0; m < 8; m++) {
+      if (m & fixedMask) continue;
+      if ((m & baseMask) !== baseMask) continue;           // 已锁定的槽位必须保持锁定
+      var freeCnt = pc(m) + fixedCount;
+      if (freeCnt > maxLock) continue;
+      if (3 - freeCnt < 1) continue;                       // 至少要留 1 个可洗槽位
+      masks.push(m);
+    }
+    masks.sort(function (a, b) { return pc(a) - pc(b); });
+
+    masks.forEach(function (mask) {
+      var slots = [], unlocked = [];
+      for (var s = 0; s < 3; s++) {
+        if (mask & (1 << s)) slots.push(s);
+        else if (!(fixedMask & (1 << s))) unlocked.push(s);
+      }
+      // 玩家已有的锁定词条必须先占用组合位置，否则会与真实状态不一致
+      var baseSlots = [];
+      for (var bs = 0; bs < 3; bs++) if (baseMask & (1 << bs)) baseSlots.push(bs);
+      var excl = 0;
+      for (var s2 = 0; s2 < 3; s2++) if (fixedMask & (1 << s2)) excl |= (1 << labType(fixedLabels[s2]));
+
+      // 枚举锁定的词条标签组合（种类互斥、升序）
+      var combos = [];
+      (function rec(i, acc, usedType) {
+        if (i === slots.length) { combos.push(acc.slice()); return; }
+        var thisSlot = slots[i];
+        var bIdx = baseSlots.indexOf(thisSlot);
+        if (bIdx >= 0) {                       // 该槽位是玩家已锁定的 → 标签固定
+          acc.push(baseLabels[bIdx]);
+          rec(i + 1, acc, usedType);
+          acc.pop();
+          return;
+        }
+        for (var ti = 0; ti < model.targetTypes.length; ti++) {
+          var t = model.targetTypes[ti];
+          if (usedType[t]) continue;
+          usedType[t] = 1;
+          var ls = model.labelList[t];
+          for (var bi = 0; bi < ls.length; bi++) {
+            acc.push(ls[bi]);
+            rec(i + 1, acc, usedType);
+            acc.pop();
+          }
+          usedType[t] = 0;
+        }
+      })(0, [], {});
+      if (slots.length === 0) combos = [[]];
+
+      var availMask = 0;
+      for (var s3 = 0; s3 < 3; s3++) {
+        if (mask & (1 << s3)) continue;
+        if (fixedMask & (1 << s3)) continue;
+        availMask |= (1 << s3);
+      }
+
+      combos.forEach(function (labels) {
+        var key = keyOf(mask, labels);
+        if (byKey[key]) return;
+        // 排除集合 = 该状态真正锁定的种类 + 永久锁定的非目标种类
+        var exclState = excl;
+        for (var j = 0; j < labels.length; j++) exclState |= (1 << labType(labels[j]));
+        var branches = buildBranches(model, unlocked, exclState);
+        var st = {
+          key: key, mask: mask, labels: labels, unlocked: unlocked,
+          excl: exclState,
+          branches: branches,
+          acts: new Int32Array(branches.length).fill(mask),
+          feasible: statePossible(model, asView(mask, labels), mask, availMask)
+        };
+        byKey[key] = st;
+        states.push(st);
+      });
+    });
+
+    // 按 |mask| 降序 → 拓扑序
+    states.sort(function (a, b) {
+      var d = pc(b.mask) - pc(a.mask);
+      return d !== 0 ? d : (a.key - b.key);
+    });
+
+    var api = {
+      states: states, fixedMask: fixedMask, fixedLabels: fixedLabels,
+      fixedCount: fixedCount, maxLock: maxLock, model: model,
+      stateOf: function (mask, labels) { return byKey[keyOf(mask, labels)] || null; },
+      toll: function (mask) { return model.costs.base + (pc(mask) + fixedCount) * model.costs.extra; },
+      lockDelta: function (from, to) {
+        var c1 = pc(from) + fixedCount, c2 = pc(to) + fixedCount;
+        var s = 0;
+        for (var k = c1; k < c2; k++) s += model.costs.lock[Math.min(k, model.costs.lock.length - 1)];
+        return s;
+      },
+      candidates: function (mask, view) {
+        var res = [mask];
+        var lockedNow = pc(mask) + fixedCount;
+        if (lockedNow >= maxLock) return res;
+        if (3 - lockedNow < 2) return res;      // 锁满 3 个就没法洗了
+        var cs = [];
+        for (var s = 0; s < 3; s++) {
+          if (mask & (1 << s)) continue;
+          if (fixedMask & (1 << s)) continue;
+          if (!isTargetLabel(model, view[s])) continue;
+          cs.push(s);
+        }
+        for (var a = 0; a < cs.length; a++) {
+          res.push(mask | (1 << cs[a]));
+          for (var b = a + 1; b < cs.length; b++) {
+            if (lockedNow + 2 > 3 - 1) continue;   // 保证仍留 1 个可洗槽位
+            res.push(mask | (1 << cs[a]) | (1 << cs[b]));
+          }
+        }
+        return res;
+      }
+    };
+    return api;
+  }
+
+  /* 给定状态，用当前动作策略求值 */
+  function evalPolicy(p1, W, actOf) {
+    var model = p1.model;
+    var list = p1.states;
+    for (var i = 0; i < list.length; i++) {
+      var st = list[i];
+      if (!st.feasible) { W[st.key] = [INF, INF, INF, INF, INF]; continue; }
+      var acc = v0(), pSelf = 0, bad = false;
+      for (var bi = 0; bi < st.branches.length; bi++) {
+        var br = st.branches[bi];
+        var view = asView(st.mask, st.labels);
+        var ui = 0;
+        for (var s = 0; s < 3; s++) {
+          if (st.mask & (1 << s)) continue;
+          if (p1.fixedMask & (1 << s)) continue;
+          view[s] = br.labels[ui++];
+        }
+        var act = actOf(st, bi, view);
+        if (act < 0) {
+          var p2 = phase2Entry(model, view, st.mask, p1.fixedMask);
+          if (p2 === null) { bad = true; break; }
+          addTo(acc, [0, p2[1], p2[2], 0, p2[4]], br.p);
+          continue;
+        }
+        if (act === st.mask) { pSelf += br.p; continue; }
+        var nxt = p1.stateOf(act, labelsAt(act, view));
+        if (!nxt || !nxt.feasible) { bad = true; break; }
+        var v = vadd(W[nxt.key], [0, 0, p1.lockDelta(st.mask, act), 0, 0]);
+        addTo(acc, v, br.p);
+      }
+      if (bad) { W[st.key] = [INF, INF, INF, INF, INF]; continue; }
+      if (pSelf >= 1 - 1e-14) { W[st.key] = [INF, INF, INF, INF, INF]; continue; }
+      var base = [p1.toll(st.mask), 0, 0, 1, 0];
+      var out = v0();
+      for (var c = 0; c < NC; c++) out[c] = (base[c] + acc[c]) / (1 - pSelf);
+      W[st.key] = out;
+    }
+  }
+
+  /* 策略改进 */
+  function improvePolicy(p1, W) {
+    var model = p1.model;
+    var list = p1.states, changed = false;
+    for (var i = 0; i < list.length; i++) {
+      var st = list[i];
+      if (!st.feasible) continue;
+      for (var bi = 0; bi < st.branches.length; bi++) {
+        var br = st.branches[bi];
+        var view = asView(st.mask, st.labels);
+        var ui = 0;
+        for (var s = 0; s < 3; s++) {
+          if (st.mask & (1 << s)) continue;
+          if (p1.fixedMask & (1 << s)) continue;
+          view[s] = br.labels[ui++];
+        }
+        var bestAct = st.acts[bi], bestCost = Infinity;
+        // 选项 1：直接进入阶段二
+        var p2 = phase2Entry(model, view, st.mask, p1.fixedMask);
+        if (p2 !== null) { bestCost = tot([0, p2[1], p2[2], 0, p2[4]]); bestAct = -1; }
+        // 选项 2：继续洗种类
+        var cands = p1.candidates(st.mask, view);
+        for (var ci = 0; ci < cands.length; ci++) {
+          var act = cands[ci];
+          if (act === st.mask) {
+            var w0 = W[st.key];
+            if (!isInf(w0) && tot(w0) < bestCost) { bestCost = tot(w0); bestAct = act; }
+          } else {
+            var nxt = p1.stateOf(act, labelsAt(act, view));
+            if (!nxt || !nxt.feasible) continue;
+            var wv = W[nxt.key];
+            if (isInf(wv)) continue;
+            var c1 = tot(wv) + p1.lockDelta(st.mask, act);
+            if (c1 < bestCost) { bestCost = c1; bestAct = act; }
+          }
+        }
+        if (bestAct !== st.acts[bi]) { st.acts[bi] = bestAct; changed = true; }
+      }
+    }
+    return changed;
+  }
+
+  function runPolicyIteration(p1) {
+    var W = {};
+    for (var it = 0; it < 200; it++) {
+      evalPolicy(p1, W, function (st, bi) { return st.acts[bi]; });
+      if (!improvePolicy(p1, W)) break;
+    }
+    evalPolicy(p1, W, function (st, bi) { return st.acts[bi]; });
+    return W;
+  }
+
+  /* 给定手动策略，仅求值 */
+  function runManualPolicy(p1, policyFn) {
+    var W = {};
+    var acts = {};
+    p1.states.forEach(function (st) {
+      acts[st.key] = new Int32Array(st.branches.length);
+      for (var bi = 0; bi < st.branches.length; bi++) {
+        var view = asView(st.mask, st.labels);
+        var ui = 0;
+        for (var s = 0; s < 3; s++) {
+          if (st.mask & (1 << s)) continue;
+          if (p1.fixedMask & (1 << s)) continue;
+          view[s] = st.branches[bi].labels[ui++];
+        }
+        acts[st.key][bi] = policyFn(st, view);
+      }
+    });
+    evalPolicy(p1, W, function (st, bi) { return acts[st.key][bi]; });
+    return { W: W, acts: acts };
+  }
+
+  /* 任意 (mask, view) 的最优决策（用于行动指南） */
+  function makeDecider(p1, W) {
+    var model = p1.model;
+    return function (mask, view, extraVec) {
+      var p2 = phase2Entry(model, view, mask, p1.fixedMask);
+      var best = null;
+      if (p2 !== null) best = { act: -1, vec: [0, p2[1], p2[2], 0, p2[4]] };
+      var cands = p1.candidates(mask, view);
+      for (var i = 0; i < cands.length; i++) {
+        var act = cands[i];
+        var vec;
+        if (act === mask) {
+          var w0 = W[keyOf(mask, labelsAt(mask, view))];
+          if (!w0 || isInf(w0)) continue;
+          vec = w0;
+        } else {
+          var nxt = p1.stateOf(act, labelsAt(act, view));
+          if (!nxt || !nxt.feasible) continue;
+          var wv = W[nxt.key];
+          if (isInf(wv)) continue;
+          vec = vadd(wv, [0, 0, p1.lockDelta(mask, act), 0, 0]);
+        }
+        if (!best || tot(vec) < tot(best.vec)) best = { act: act, vec: vec };
+      }
+      return best;
+    };
+  }
+
+  /* =========================================================================
+   * 9. 主求解入口
+   * ========================================================================= */
+  function solve(cfg, start, opts) {
+    opts = opts || {};
+    var errors = validateConfig(cfg);
+    if (errors.length) return { ok: false, errors: errors };
+
+    var t0 = now();
+    var model = createModel(cfg);
+
+    start = start || defaultStart();
+    var i, s;
+
+    /* ---- 解析初始状态 ---- */
+    var inLabels = [ABSENT, ABSENT, ABSENT];
+    var inLocked = 0;
+    var seen = {};
+    for (i = 0; i < 3; i++) {
+      var sl = (start.slots && start.slots[i]) || { type: null, tier: 1, locked: false };
+      if (!sl.type) continue;
+      var ti = -1;
+      for (var k = 0; k < model.n; k++) if (model.types[k].id === sl.type) ti = k;
+      if (ti < 0) { errors.push('第 ' + (i + 1) + ' 槽位词条无效。'); continue; }
+      if (seen[ti] !== undefined) {
+        errors.push('第 ' + (i + 1) + ' 槽位与第 ' + (seen[ti] + 1) + ' 槽位设置了相同词条「' +
+          model.types[ti].name + '」，游戏中不可能同时存在。');
+      }
+      seen[ti] = i;
+      var tier = Math.max(1, Math.min(TIER_MAX, Math.round(num(sl.tier, 1))));
+      inLabels[i] = lab(ti, bandOfTier(model, ti, tier));
+      if (sl.locked) inLocked |= (1 << i);
+    }
+    if (errors.length) return { ok: false, errors: errors };
+
+    /* 初始视图 = 玩家当前真实的三个槽位。
+       ⚠ 未锁定的词条同样是「已有的词条」：
+          「变更效果」会把未锁定槽位重掷，但「变更数值」只重掷阶数、保留种类，
+          所以「种类是否齐备」必须按真实视图判断 —— 否则会出现
+          "种类已经齐备、只差阶数，却建议继续洗种类" 的错误结论。
+       唯一例外：已锁定 + 非目标词条的槽位视为「永久占用」，不参与任何目标。 */
+    var fixedMask = 0, fixedLabels = [ABSENT, ABSENT, ABSENT];
+    var dynMask = 0;
+    var effectiveLabels = [ABSENT, ABSENT, ABSENT];   // 真正参与求解的初始视图
+    for (i = 0; i < 3; i++) {
+      if (inLabels[i] === ABSENT) continue;
+      effectiveLabels[i] = inLabels[i];
+      if (!isTargetLabel(model, inLabels[i])) {
+        if (inLocked & (1 << i)) { fixedMask |= (1 << i); fixedLabels[i] = inLabels[i]; }
+        continue;
+      }
+      if (inLocked & (1 << i)) dynMask |= (1 << i);
+    }
+    var availForReqs = 3 - pc(fixedMask);
+    if (model.nReqs > availForReqs) {
+      return { ok: false, errors: ['目标条件有 ' + model.nReqs + ' 项，但当前只有 ' + availForReqs +
+        ' 个可用槽位（存在已锁定的非目标词条），无法同时满足。'] };
+    }
+
+    var p1 = createPhase1(model, fixedMask, fixedLabels, inLocked & dynMask, (function () {
+      var arr = [];
+      for (var k2 = 0; k2 < 3; k2++) if ((inLocked & dynMask) & (1 << k2)) arr.push(effectiveLabels[k2]);
+      return arr;
+    })());
+    var W = (opts.manual && opts.manual.enabled) ? runManualPolicyFixed(p1, opts.manual) : runPolicyIteration(p1);
+    if (opts.manual && opts.manual.enabled) W = W.W;
+
+    var decide = makeDecider(p1, W);
+
+    /* ---- 起始决策：枚举所有可行的"起点锁定组合"方案 ----
+       方案空间 = {起点锁哪几个槽}：
+         · 视图固定为玩家当前的三个槽位（锁定与否都真实存在）
+         · 锁定只影响「变更效果」是否重掷该槽，以及锁定费
+       约束：至少要留 1 个未锁定槽位（否则点不了「变更效果」），
+             除非三个槽位此刻已经全部达标（0 消耗终态）。 */
+    var startViewAll = effectiveLabels.slice();
+    var bestStart = null;
+    var startOptions = [];
+
+    /* 参与枚举的槽位：非永久锁定（非目标词条锁定）的槽位 */
+    var candSlots = [];
+    for (i = 0; i < 3; i++) {
+      if (fixedMask & (1 << i)) continue;
+      candSlots.push(i);
+    }
+
+    /* 起始视图与"锁哪几个"无关：当前词条都在场 */
+    var startViewFull = (function () {
+      var v = [ABSENT, ABSENT, ABSENT];
+      for (var k = 0; k < 3; k++) {
+        if (fixedMask & (1 << k)) { v[k] = fixedLabels[k]; continue; }
+        v[k] = startViewAll[k];
+      }
+      return v;
+    })();
+
+    function viewOfKeep() {
+      return startViewFull.slice();
+    }
+
+    /* 枚举 keepMask 的所有组合（保持至少 1 个可洗槽位） */
+    for (var bi = 0; bi < (1 << candSlots.length); bi++) {
+      var keepMask = 0;
+      for (var j = 0; j < candSlots.length; j++) if (bi & (1 << j)) keepMask |= (1 << candSlots[j]);
+      /* 通常必须至少留 1 个未锁定槽位用于洗练；
+         但「三个槽位已经全部达标」是合法终态 —— 一次都不用洗，直接 0 消耗。
+         此时全锁组合同样要进入方案空间，否则会误报「无法达成目标」。 */
+      var allSlotsLocked = (pc(keepMask) + pc(fixedMask) >= 3);
+      /* 必须包含所有已锁定的目标槽位吗？不 —— 允许"解锁"作为一个可选方案（免费） */
+      var viewForState = viewOfKeep();
+      var dec = decide(keepMask, viewForState);
+      if (!dec) continue;
+      if (allSlotsLocked && tot(dec.vec) > 1e-9) continue;   // 全锁却还没达标 → 进不了洗练，丢弃
+      var keepLabels = [];
+      for (var kl = 0; kl < 3; kl++) if (keepMask & (1 << kl)) keepLabels.push(viewForState[kl]);
+      var opt = {
+        keepMask: keepMask,
+        keepLabels: keepLabels,
+        keepView: viewForState,
+        act: dec.act,
+        vec: dec.vec,
+        cost: tot(dec.vec),
+        unlockSlots: (function () {
+          var arr = [];
+          for (var u = 0; u < 3; u++) {
+            if ((inLocked & (1 << u)) && !(keepMask & (1 << u))) arr.push(u);
+          }
+          return arr;
+        })(),
+        newlyLocked: dec.act >= 0 ? (dec.act & ~keepMask) : 0,
+        locksCount: pc(keepMask) + pc(fixedMask)
+      };
+      startOptions.push(opt);
+      if (!bestStart || tot(dec.vec) < tot(bestStart.vec)) bestStart = opt;
+    }
+    if (!bestStart) {
+      /* 三个槽位都被锁死时没有任何可洗槽位：这不是"目标无法达成"，而是需要先解锁 */
+      if (pc(inLocked) >= 3) {
+        return { ok: false, errors: ['三个槽位都已锁定，没有可洗槽位：请至少解锁一个槽位（解锁免费）后再计算。'] };
+      }
+      return { ok: false, errors: ['当前初始状态下无法达成目标：请检查槽位是否全部被锁定，或目标词条是否可用。'] };
+    }
+
+    /* ---- 单次洗练统计 ---- */
+    var single = singleRollStats(model, effectiveLabels, inLocked, fixedMask);
+
+    /* ---- 结果 ---- */
+    var res = {
+      ok: true,
+      version: VERSION,
+      model: model,
+      startLabels: effectiveLabels,      // 参与求解的视图
+      inputLabels: inLabels,             // 用户在界面里填写的原始词条
+      startLocked: inLocked,
+      fixedMask: fixedMask,
+      fixedLabels: fixedLabels,
+      p1Only: bestStart.act === -1,
+      totals: vecTotals(bestStart.vec, model),
+      vec: bestStart.vec,
+      startOptions: startOptions,
+      chosenStart: bestStart,
+      single: single,
+      elapsedMs: now() - t0,
+      states: p1.states.length
+    };
+
+    res.guide = buildGuide(model, p1, W, decide, bestStart, startViewAll, fixedMask, fixedLabels, inLocked);
+    res.phase2 = buildPhase2Report(model);
+    res.elapsedMs = now() - t0;
+    res._p1 = p1;
+    res._W = W;
+    res._decide = decide;
+    return res;
+  }
+
+  function runManualPolicyFixed(p1, manual) {
+    return runManualPolicy(p1, makeManualPolicy(p1, manual));
+  }
+
+  function makeManualPolicy(p1, manual) {
+    var model = p1.model;
+    var order = manual.slotPriority || [2, 1, 0];
+    var maxLock = Math.max(0, Math.min(2, Math.round(num(manual.maxLocks, 2))));
+    var minBand = Math.max(0, Math.round(num(manual.minBand, 0)));
+    return function (st, view) {
+      if (manual.enterPhase2 !== false && completeAssignments(model, view).length) return -1;
+      var cands = [];
+      for (var s = 0; s < 3; s++) {
+        if (st.mask & (1 << s)) continue;
+        if (p1.fixedMask & (1 << s)) continue;
+        var l = view[s];
+        if (!isTargetLabel(model, l)) continue;
+        if (labBand(l) < minBand) continue;
+        cands.push(s);
+      }
+      cands.sort(function (a, b) { return order.indexOf(a) - order.indexOf(b); });
+      var mask = st.mask;
+      var cnt = pc(mask) + p1.fixedCount;
+      for (var i = 0; i < cands.length && cnt < maxLock; i++) {
+        mask |= (1 << cands[i]);
+        cnt++;
+      }
+      if (mask !== st.mask) {
+        var nxt = p1.stateOf(mask, labelsAt(mask, view));
+        if (!nxt || !nxt.feasible) return st.mask;
+      }
+      return mask;
+    };
+  }
+
+  function vecTotals(v, model) {
+    return {
+      stones: v[0] + v[1] + v[2],
+      phase1Stones: v[0],
+      phase2Stones: v[1],
+      lockStones: v[2],
+      phase1Rolls: v[3],
+      phase2Rolls: v[4],
+      totalRolls: v[3] + v[4],
+      raw: v
+    };
+  }
+
+  /* 非目标词条：统一用 JUNK 表示（与求解器内部一致） */
+  function JUNK_OR_UNKNOWN(model, typeIdx) {
+    return JUNK;
+  }
+
+  function now() {
+    if (typeof performance !== 'undefined' && performance.now) return performance.now();
+    return Date.now();
+  }
+
+  /* =========================================================================
+   * 10. 单次洗练统计
+   * ========================================================================= */
+  function singleRollStats(model, labels, lockedMask, fixedMask) {
+    var unlocked = [], excl = 0, s;
+    for (s = 0; s < 3; s++) {
+      if (lockedMask & (1 << s)) excl |= (1 << labType(labels[s]));
+      else unlocked.push(s);
+    }
+    // 非目标锁定槽也要排除（labelType 有效时）
+    for (s = 0; s < 3; s++) {
+      if ((fixedMask & (1 << s)) && labels[s] !== ABSENT) excl |= (1 << labType(labels[s]));
+    }
+    var branches = buildBranches(model, unlocked, excl);
+    var pTypes = 0, pAll = 0;
+    for (var bi = 0; bi < branches.length; bi++) {
+      var br = branches[bi], view = labels.slice(), ui = 0;
+      for (s = 0; s < 3; s++) {
+        if (lockedMask & (1 << s)) continue;
+        view[s] = br.labels[ui++];
+      }
+      var asg = completeAssignments(model, view);
+      if (!asg.length) continue;
+      pTypes += br.p;
+      var done = false;
+      for (var ai = 0; ai < asg.length && !done; ai++) {
+        var ok = true;
+        for (var k2 = 0; k2 < asg[ai].length; k2++) {
+          if (!bandSatisfies(model, view[asg[ai][k2].slot], asg[ai][k2].req)) { ok = false; break; }
+        }
+        if (ok) done = true;
+      }
+      if (done) pAll += br.p;
+    }
+    return {
+      pTypes: pTypes, pAll: pAll,
+      rollCost: model.costs.base + pc(lockedMask) * model.costs.extra,
+      unlocked: unlocked
+    };
+  }
+
+  /* =========================================================================
+   * 11. 行动指南
+   * ========================================================================= */
+  function describeMask(mask, model) {
+    var out = [];
+    for (var s = 0; s < 3; s++) if (mask & (1 << s)) out.push('第' + (s + 1) + '槽');
+    return out.length ? out.join(' + ') : '无锁定';
+  }
+  function labelName(model, l) {
+    if (l === ABSENT) return '空';
+    if (l === JUNK) return '非目标词条';
+    var t = labType(l);
+    if (t < 0 || t >= model.n) return '非目标词条';
+    return model.types[t].name;
+  }
+  function bandDesc(model, l) {
+    if (l === ABSENT || l === JUNK) return '';
+    var t = labType(l), b = labBand(l);
+    var thr = model.thrByType[t];
+    if (!thr.length) return '';
+    if (b === 0) return '未达 ≥' + thr[0] + '阶';
+    return '≥' + thr[b - 1] + '阶' + (b < thr.length ? '(未达≥' + thr[b] + '阶)' : '(达标)');
+  }
+
+  function buildGuide(model, p1, W, decide, bestStart, startView, fixedMask, fixedLabels, inLocked) {
+    var guide = { start: null, levels: [], phase2: null };
+    var s, s2, li, fs;
+    W_REF = W;
+
+    /* ---------- 起步 ---------- */
+    guide.start = {
+      keepMask: bestStart.keepMask,
+      unlock: bestStart.unlockSlots || [],
+      keepDesc: describeMask(bestStart.keepMask, model),
+      lockedDesc: (function () {
+        var arr = [];
+        for (var k = 0; k < 3; k++) {
+          if (inLocked & (1 << k)) arr.push('第' + (k + 1) + '槽');
+        }
+        return arr.length ? arr.join(' + ') : '无锁定';
+      })(),
+      act: bestStart.act,
+      actionText: (bestStart.act === -1 && tot(bestStart.vec) <= 1e-9)
+        ? '目标已全部达成：不用再洗练'
+        : (bestStart.act === -1 ? '词条种类已齐备，直接进入「变更数值」阶段' :
+          (bestStart.act === bestStart.keepMask
+            ? '保持当前锁定（不解锁），点击「变更效果」继续洗种类'
+            : '立即锁定 ' + describeMask(bestStart.act & ~bestStart.keepMask, model) + '，再点击「变更效果」')),
+      vec: bestStart.vec,
+      cost: tot(bestStart.vec)
+    };
+
+    /* 每种目标词条列入表格的档位（低阶暂存 / 已达最高档） */
+    var labelRows = [];
+    for (var ti = 0; ti < model.targetTypes.length; ti++) {
+      var t = model.targetTypes[ti];
+      for (var bb = 0; bb < model.bandCount[t]; bb++) {
+        if (model.bandProbs[t][bb] > 1e-12) labelRows.push(lab(t, bb));
+      }
+    }
+
+    function baseView() {
+      var v = [ABSENT, ABSENT, ABSENT];
+      for (var k = 0; k < 3; k++) if (fixedMask & (1 << k)) v[k] = fixedLabels[k];
+      return v;
+    }
+
+    /* ---------- 第 1 层：让"当前锁定"作为起点走一次决策 ---------- */
+    /* 起点的 mask 就是玩家此刻真实锁定的槽位，否则会给出与现状矛盾的建议 */
+    var curMask = bestStart.keepMask;
+    var curLabels = [];
+    for (s = 0; s < 3; s++) if (curMask & (1 << s)) curLabels.push(startView[s]);
+    var curBaseDesc = curMask ? describeMask(curMask, model) : '无';
+
+    var level0 = { level: 0, baseMask: curMask, baseLabels: curLabels, rows: [], started: [] };
+    for (s = 0; s < 3; s++) {
+      if (fixedMask & (1 << s)) continue;
+      if (curMask & (1 << s)) continue;       // 已锁定槽位不作为"新出现"参与枚举
+      for (li = 0; li < labelRows.length; li++) {
+        // 起点视图：已锁定槽位带着自己的词条，其余槽位只有本次枚举的那个有值
+        var view = baseView();
+        for (var lk = 0; lk < 3; lk++) {
+          view[lk] = ABSENT;                       // 未锁定槽位一律从"空"开始
+          if (curMask & (1 << lk)) view[lk] = startView[lk];
+          if (fixedMask & (1 << lk)) view[lk] = fixedLabels[lk];
+        }
+        view[s] = labelRows[li];
+        var dec = decide(curMask, view);
+        if (!dec) continue;
+        var row = makeRow(model, p1, 0, curLabels, s, labelRows[li], dec, view, curMask);
+        row.baseDesc = curMask ? describeMask(curMask, model) : '';
+        row.fromCurrent = true;
+        level0.rows.push(row);
+        if (dec.act !== -1 && dec.act !== curMask) {
+          level0.started.push({ mask: dec.act, slot: s, label: row.label, fromMask: curMask, vec: dec.vec });
+        }
+      }
+    }
+    guide.levels.push(level0);
+
+    /* ---------- 1 锁层：展开最优策略真正会进入的锁定状态 ---------- */
+    var level1 = { level: 1, rows: [] };
+    var emitted = {};                      // 以 (mask, 新出现槽, 词条标签) 三元组去重
+    level0.started.sort(function (x, y) { return tot(x.vec) - tot(y.vec); });
+    for (var si = 0; si < level0.started.length; si++) {
+      var st0 = level0.started[si];
+      var sm = st0.mask;
+      // 只展开"恰好锁住本次出现的那一个槽位"的状态，且该状态确实是本分支的最优动作
+      if (pc(sm) !== 1) continue;
+      var smSlot = 0;
+      for (s2 = 0; s2 < 3; s2++) if (sm & (1 << s2)) smSlot = s2;
+      if (smSlot !== st0.slot) continue;
+      for (var s4 = 0; s4 < 3; s4++) {
+        if (sm & (1 << s4)) continue;
+        if (fixedMask & (1 << s4)) continue;
+        for (var lj = 0; lj < labelRows.length; lj++) {
+          var dk = sm + '|' + s4 + '|' + labelRows[lj];
+          if (emitted[dk]) continue;
+          var view1 = baseView();
+          view1[smSlot] = st0.label;
+          view1[s4] = labelRows[lj];
+          var dec1 = decide(sm, view1);
+          if (!dec1) continue;
+          // 只有"该槽位在最优策略下仍需继续洗种类"才值得列入本层
+          if (dec1.act === -1) continue;
+          emitted[dk] = 1;
+          var row1 = makeRow(model, p1, 1, [st0.label], s4, labelRows[lj], dec1, view1, sm);
+          row1.baseDesc = '第' + (smSlot + 1) + '槽「' + labelName(model, st0.label) + '」';
+          level1.rows.push(row1);
+        }
+      }
+    }
+    if (level1.rows.length) guide.levels.push(level1);
+
+    /* ---------- 阶段二说明 ---------- */
+    guide.phase2 = buildPhase2Report(model, startView, bestStart, fixedMask);
+    return guide;
+  }
+
+  function makeRow(model, p1, level, baseLabels, slot, label, dec, view, baseMask) {
+    baseMask = baseMask || 0;
+    var lockCost = (dec.act >= 0 && dec.act !== baseMask) ? p1.lockDelta(baseMask, dec.act) : 0;
+    // 不锁定（继续洗）的对照成本
+    var noLockVec = W_get(p1, W_REF, baseMask, view);
+    var row = {
+      level: level,
+      slot: slot,
+      label: label,
+      labelName: labelName(model, label),
+      bandDesc: bandDesc(model, label),
+      baseMask: baseMask,
+      baseLabels: baseLabels,
+      act: dec.act,
+      lock: dec.act !== -1 && dec.act !== baseMask,
+      lockSlots: dec.act >= 0 ? (dec.act & ~baseMask) : 0,
+      enterPhase2: dec.act === -1,
+      cost: tot(dec.vec),
+      vec: dec.vec,
+      lockCost: lockCost,
+      actDesc: dec.act === -1 ? '进入「变更数值」' :
+        (dec.act === baseMask ? '不锁定，继续洗种类'
+          : '锁定' + describeMask(dec.act & ~baseMask, model) + '，继续洗种类')
+    };
+    row.delta = (noLockVec && isFinite(tot(noLockVec))) ? (row.cost - tot(noLockVec)) : null;
+    return row;
+  }
+
+  var W_REF = null;
+  function W_get(p1, W, mask, view) {
+    if (!W) return null;
+    var st = p1.stateOf(mask, labelsAt(mask, view));
+    if (!st || !st.feasible) return null;
+    var v = W[st.key];
+    return (v && !isInf(v)) ? v : null;
+  }
+
+  /* 阶段二报告：与初始状态无关，直接按"目标结构"给出洗数值阶段的完整表 */
+  function buildPhase2Report(model) {
+    var out = { rows: [], assignment: null, applicable: false, n: 0 };
+
+    /* 为每个目标条件挑一个候选种类，并分配到一个槽位（种类互斥） */
+    var best = null;
+    function pick(r, usedTypes, usedSlots, acc) {
+      if (r === model.nReqs) {
+        if (!best) best = acc.slice();
+        return !!best;
+      }
+      for (var ci = 0; ci < model.reqs[r].cands.length; ci++) {
+        var t = model.reqs[r].cands[ci];
+        if (usedTypes[t]) continue;
+        for (var s = 0; s < 3; s++) {
+          if (usedSlots[s]) continue;
+          usedTypes[t] = 1; usedSlots[s] = 1;
+          acc.push({ req: r, slot: s, type: t });
+          if (pick(r + 1, usedTypes, usedSlots, acc)) return true;
+          acc.pop();
+          usedTypes[t] = 0; usedSlots[s] = 0;
+        }
+      }
+      return false;
+    }
+    if (!pick(0, {}, [false, false, false], []) || !best) return out;
+
+    // 分配按 req 排序，与 buildPhase2 的索引约定一致
+    best.sort(function (x, y) { return x.req - y.req; });
+    var assignment = best.map(function (x) { return { req: x.req, slot: x.slot }; });
+
+    var tbl = buildPhase2(model, assignment, 0);
+    out.applicable = true;
+    out.assignment = assignment;
+    out.types = best.map(function (x) { return x.type; });
+    out.n = tbl.n;
+    out.full = tbl.full;
+    out.entryS = 0;
+    /* 报告以「已达标槽位恰好处于最低达标阶数」为基准：这既是新规则下最想保留的
+       低数值状态，也给出了最乐观的数值池占用效果。同一件装备数值互不相同，
+       所以同门槛的多个槽位依次取更高的阶数。 */
+    function valsOfS(S) {
+      var v = [0, 0, 0], used = {}, k;
+      for (k = 0; k < tbl.n; k++) {
+        if (!(S & (1 << k))) continue;
+        var tv = tbl.m[k];
+        while (used[tv] && tv < 15) tv++;
+        used[tv] = 1;
+        v[k] = tv;
+      }
+      for (k = 0; k < tbl.n; k++) {
+        if (S & (1 << k)) continue;
+        var u = 1;
+        while (u < 15 && (used[u] || u >= tbl.m[k])) u++;
+        used[u] = 1;
+        v[k] = u;
+      }
+      return v;
+    }
+    out.entry = tbl.get(0, [0, 0, 0]);
+    out.extraLocked = 0;
+
+    for (var S = 0; S <= tbl.full; S++) {
+      var vals = valsOfS(S);
+      var st = tbl.stats(S, vals);
+      var lockNow = tbl.lockSetOf(S);
+      var row = {
+        S: S,
+        L: lockNow,
+        satisfied: pc(S),
+        need: tbl.n - pc(S),
+        perRoll: tbl.toll(pc(S)),
+        vec: tbl.get(S, vals),
+        probImprove: st.probImprove,
+        lockSet: lockNow,
+        qs: []
+      };
+      for (var k2 = 0; k2 < tbl.n; k2++) {
+        row.qs.push({
+          slot: assignment[k2].slot + 1,
+          type: best[k2].type,
+          typeName: model.types[best[k2].type].name,
+          q: st.q[k2],
+          req: assignment[k2].req,
+          minTier: model.reqs[assignment[k2].req].minTier,
+          inLockSet: !!(lockNow & (1 << k2))
+        });
+      }
+      out.rows.push(row);
+    }
+    return out;
+  }
+
+  /* =========================================================================
+   * 12. 蒙特卡洛校验 / 模拟器（仅用于验证，不作为主计算）
+   * ========================================================================= */
+  function simulate(cfg, start, trials, seed) {
+    var errors = validateConfig(cfg);
+    if (errors.length) return { ok: false, errors: errors };
+    var model = createModel(cfg);
+    var sol = solve(cfg, start, {});
+    if (!sol.ok) return sol;
+
+    var decide = sol._decide, p1 = sol._p1;
+    var fixedMask = sol.fixedMask;
+    var rng = mulberry32(seed || 20240607);
+    var total = 0, p1stones = 0, p2stones = 0, lockstones = 0, rolls1 = 0, rolls2 = 0, wins = 0, done = 0;
+    var T = Math.max(1, Math.min(200000, Math.round(trials || 2000)));
+    var tStart = Date.now();
+
+    for (var tt = 0; tt < T; tt++) {
+      if (Date.now() - tStart > 2500) break;             // 总时间预算：保证页面不卡死
+      var tTrial = Date.now();
+      /* 起点必须与"被采纳的起始方案"完全一致：
+         选用 keepMask 保留的槽位带着词条进入，其余槽位为空（下一次洗练会被重掷）。 */
+      var mask = sol.chosenStart.keepMask;
+      var view = (sol.chosenStart.keepView || sol.startLabels).slice();
+      var guard = 0;
+      /* 单次模拟先在局部累积，只有跑完的样本才计入统计 */
+      var cTotal = 0, cP1 = 0, cP2 = 0, cLock = 0, cR1 = 0, cR2 = 0;
+
+      /* ---------- 阶段一：严格按策略 —— 锁定 → 再洗 → 锁定 → ... ---------- */
+      while (guard++ < 500) {
+        if ((guard & 31) === 0 && Date.now() - tTrial > 200) break;   // 单样本时间预算
+        var dec = decide(mask, view);
+        if (!dec) break;
+        if (dec.act === -1) break;                       // 决策：进入阶段二
+        if (pc(mask) >= 3) break;                        // 全锁死：无法再洗，判为未收敛
+        if (dec.act !== mask) {                          // 决策：立刻锁定
+          var dcost = p1.lockDelta(mask, dec.act);
+          cLock += dcost; cTotal += dcost;
+          mask = dec.act;
+          continue;                                      // 锁定不消耗洗练次数
+        }
+        var cost = p1.toll(mask);                        // 决策：不锁，洗一次
+        cTotal += cost; cP1 += cost; cR1++;
+        view = rollEffects(model, view, mask, fixedMask, rng);
+      }
+      if (guard >= 500) continue;                        // 该样本未收敛，丢弃
+
+      /* ---------- 阶段二：不放回抽数值（达标即锁定） ---------- */
+      var asg = completeAssignments(model, view);
+      if (!asg.length) continue;
+
+      // 选让当前状态最优的 (分配, 额外锁) —— 与 phase2Entry 一致
+      var bestKey = null, bestC = Infinity;
+      for (var ai = 0; ai < asg.length; ai++) {
+        var a0 = asg[ai], S0 = 0, L0 = 0, used0 = 0, i0;
+        var vals0 = [1, 1, 1];
+        for (i0 = 0; i0 < a0.length; i0++) {
+          used0 |= (1 << a0[i0].slot);
+          vals0[i0] = labelTier(model, view[a0[i0].slot]) || 1;
+          if (vals0[i0] >= model.reqs[a0[i0].req].minTier) S0 |= (1 << i0);
+          if (mask & (1 << a0[i0].slot)) L0 |= (1 << i0);
+        }
+        L0 = L0 & S0;
+        var extra0 = 0;
+        for (var s0 = 0; s0 < 3; s0++) if ((fixedMask & (1 << s0)) || ((mask & (1 << s0)) && !(used0 & (1 << s0)))) extra0++;
+        var tbl0 = buildPhase2(model, a0, extra0);
+        var v0 = tbl0.get(S0, vals0);
+        if (isInf(v0)) continue;
+        var pay0 = (S0 === (1 << tbl0.n) - 1) ? 0 : lockDeltaCost(model, pc(L0) + extra0, pc(S0) + extra0);
+        if (tot(v0) + pay0 < bestC) { bestC = tot(v0) + pay0; bestKey = { asg: a0, tbl: tbl0, extra: extra0 }; }
+      }
+      if (!bestKey) continue;
+      var asg2 = bestKey.asg, tbl2 = bestKey.tbl;
+
+      var tiers = tiersFromView(model, asg2, view), Scur = 0, Lm = 0, slotOf = [];
+      for (var i1 = 0; i1 < asg2.length; i1++) {
+        slotOf.push(asg2[i1].slot);
+        if (tiers[i1] >= tbl2.m[i1]) Scur |= (1 << i1);
+      }
+      /* 进入阶段二的标准动作：未达标的锁定槽免费解锁；已达标且已锁的沿用 */
+      for (i1 = 0; i1 < asg2.length; i1++) {
+        var sl0 = slotOf[i1];
+        if (Scur & (1 << i1)) { if (mask & (1 << sl0)) Lm |= (1 << i1); }
+        else if (mask & (1 << sl0)) mask &= ~(1 << sl0);
+      }
+
+      var guard2 = 0;
+      while (guard2++ < 5000 && Scur !== tbl2.full) {
+        if ((guard2 & 15) === 0 && Date.now() - tTrial > 200) break;  // 单样本时间预算
+        // 1) 达标即锁定（按锁定顺序付费）
+        for (var i2 = 0; i2 < asg2.length; i2++) {
+          if (!(Scur & (1 << i2)) || (Lm & (1 << i2))) continue;
+          if (mask & (1 << slotOf[i2])) { Lm |= (1 << i2); continue; }   // 阶段一已锁，无需再付费
+          var cnt = 0, s2;
+          for (s2 = 0; s2 < 3; s2++) if ((fixedMask & (1 << s2)) || (mask & (1 << s2))) cnt++;
+          var lc = model.costs.lock[Math.min(cnt, model.costs.lock.length - 1)];
+          cLock += lc; cTotal += lc;
+          Lm |= (1 << i2);
+          mask |= (1 << slotOf[i2]);
+        }
+        if (Scur === tbl2.full) break;
+
+        // 2) 洗一次数值：未锁定槽位从「15 阶 − 当前 3 个数值」中不放回抽取
+        var c3 = model.costs.base + (pc(mask) + pc(fixedMask)) * model.costs.extra;
+        cTotal += c3; cP2 += c3; cR2++;
+        var excl = 0, i3;
+        for (i3 = 0; i3 < asg2.length; i3++) excl |= (1 << tiers[i3]);   // 当前数值全部占住池子
+        /* 某个未达标槽位已经不可能再抽到 ≥ 门槛的数值（池子被占光）→ 放弃本样本 */
+        var dead = false;
+        for (i3 = 0; i3 < asg2.length && !dead; i3++) {
+          if (Lm & (1 << i3)) continue;
+          var can = false;
+          for (var tt0 = tbl2.m[i3]; tt0 <= 15; tt0++) if (!(excl & (1 << tt0)) && model.tp[tt0 - 1] > 0) { can = true; break; }
+          if (!can) dead = true;
+        }
+        if (dead) break;
+        var nv = tiers.slice(), S2 = Scur;
+        for (var i4 = 0; i4 < asg2.length; i4++) {
+          if (Lm & (1 << i4)) continue;
+          var totW = 0, tv;
+          for (tv = 1; tv <= 15; tv++) if (!(excl & (1 << tv)) && model.tp[tv - 1] > 0) totW += model.tp[tv - 1];
+          var r = rng() * totW, pick = 0;
+          for (tv = 1; tv <= 15; tv++) {
+            if (excl & (1 << tv)) continue;
+            if (model.tp[tv - 1] <= 0) continue;
+            r -= model.tp[tv - 1];
+            if (r <= 0) { pick = tv; break; }
+          }
+          if (!pick) {
+            for (tv = 15; tv >= 1; tv--) if (!(excl & (1 << tv)) && model.tp[tv - 1] > 0) { pick = tv; break; }
+          }
+          nv[i4] = pick;
+          excl |= (1 << pick);
+          if (pick >= tbl2.m[i4]) S2 |= (1 << i4);
+        }
+        /* 「应用更改」只在有新增达标时才划算，否则「保留当前」 */
+        if (S2 !== Scur) {
+          tiers = nv;
+          Scur = S2;
+          for (i4 = 0; i4 < asg2.length; i4++) {
+            if (Lm & (1 << i4)) continue;
+            view[slotOf[i4]] = lab(labType(view[slotOf[i4]]), bandOfTier(model, labType(view[slotOf[i4]]), tiers[i4]));
+          }
+        }
+      }
+      if (Scur !== tbl2.full) continue;                  // 该样本未收敛，丢弃
+      total += cTotal; p1stones += cP1; p2stones += cP2;
+      lockstones += cLock; rolls1 += cR1; rolls2 += cR2;
+      wins++; done++;
+    }
+    return {
+      ok: true, trials: T, wins: wins, done: done,
+      avgStones: total / Math.max(1, done), avgPhase1: p1stones / Math.max(1, done), avgPhase2: p2stones / Math.max(1, done),
+      avgLock: lockstones / Math.max(1, done), avgRolls1: rolls1 / Math.max(1, done), avgRolls2: rolls2 / Math.max(1, done),
+      theory: sol.totals
+    };
+  }
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function rollTier(model, rng) {
+    var r = rng(), acc = 0;
+    for (var i = 0; i < TIER_MAX; i++) { acc += model.tp[i]; if (r <= acc + 1e-15) return i + 1; }
+    return TIER_MAX;
+  }
+
+  /* 按真实规则重掷"变更效果" */
+  function rollEffects(model, view, mask, fixedMask, rng) {
+    var out = view.slice();
+    var used = {};
+    for (var s = 0; s < 3; s++) {
+      if (mask & (1 << s)) { if (view[s] !== ABSENT) used[labType(view[s])] = 1; }
+      else if (fixedMask & (1 << s)) { if (view[s] !== ABSENT) used[labType(view[s])] = 1; }
+    }
+    for (var s2 = 0; s2 < 3; s2++) {
+      if (mask & (1 << s2)) continue;
+      if (fixedMask & (1 << s2)) continue;
+      if (rng() > model.slotP[s2]) { out[s2] = ABSENT; continue; }
+      var pool = [], wsum = 0, t;
+      for (t = 0; t < model.n; t++) {
+        if (used[t]) continue;
+        if (model.weights[t] <= 0) continue;
+        pool.push(t); wsum += model.weights[t];
+      }
+      if (!pool.length) { out[s2] = ABSENT; continue; }
+      var r = rng() * wsum, pick = pool[pool.length - 1];
+      for (var k = 0; k < pool.length; k++) {
+        r -= model.weights[pool[k]];
+        if (r <= 0) { pick = pool[k]; break; }
+      }
+      used[pick] = 1;
+      var tier = rollTier(model, rng);
+      out[s2] = model.isTarget[pick] ? lab(pick, bandOfTier(model, pick, tier)) : JUNK;
+    }
+    return out;
+  }
+
+  /* =========================================================================
+   * 13. 导出
+   * ========================================================================= */
+  return {
+    VERSION: VERSION,
+    TIER_MAX: TIER_MAX,
+    ABSENT: ABSENT,
+    JUNK: JUNK,
+    TYPE_DEFS: TYPE_DEFS,
+    DEFAULT_TIER_PROBS: DEFAULT_TIER_PROBS,
+    DEFAULT_SLOT_PROBS: DEFAULT_SLOT_PROBS,
+    defaultConfig: defaultConfig,
+    defaultStart: defaultStart,
+    validateConfig: validateConfig,
+    createModel: createModel,
+    solve: solve,
+    simulate: simulate,
+    probGE: probGE,
+    tierProb: tierProb,
+    bandOfTier: bandOfTier,
+    lab: lab,
+    labType: labType,
+    labBand: labBand,
+    buildBranches: buildBranches,
+    completeAssignments: completeAssignments,
+    buildPhase2: buildPhase2,
+    labelTier: labelTier,
+    rollEffects: rollEffects,
+    bandSatisfies: bandSatisfies,
+    typeSatisfies: typeSatisfies,
+    labelsAt: labelsAt,
+    asView: asView,
+    rnd: rnd,
+    pc: pc
+  };
+});
+
+
+/* =====================================================================
+ * UI 层：状态管理、渲染、交互
+ * 依赖全局 NIKKE_ENGINE
+ * ===================================================================== */
+(function () {
+  'use strict';
+
+  var E = window.NIKKE_ENGINE;
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+  /* ------------------------------------------------------------------
+   * 状态
+   * ------------------------------------------------------------------ */
+  var state = {
+    cfg: E.defaultConfig(),
+    start: E.defaultStart(),
+    manual: { enabled: false, priority: [2, 1, 0], maxLocks: 2, minBand: 0 },
+    result: null,
+    manualResult: null,
+    tab: 'pane-guide'
+  };
+
+  var COST_KEYS = [
+    ['base', '基础洗练消耗'],
+    ['lock1', '锁第 1 个'],
+    ['lock2', '锁第 2 个'],
+    ['lock3', '锁第 3 个'],
+    ['extra', '每锁 +1/次']
+  ];
+
+  function fmt(n, d) {
+    if (n === null || n === undefined || !isFinite(n)) return '—';
+    var v = Number(n);
+    if (Math.abs(v) >= 10000) return v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return v.toFixed(d === undefined ? 2 : d);
+  }
+  function pct(n, d) {
+    if (!isFinite(n)) return '—';
+    var v = n * 100;
+    if (v > 0 && v < 0.01) return '<0.01%';
+    return v.toFixed(d === undefined ? 2 : d) + '%';
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* ------------------------------------------------------------------
+   * 渲染：槽位
+   * ------------------------------------------------------------------ */
+  function typeOptions(sel) {
+    var out = '<option value="">— 空 / 无词条 —</option>';
+    state.cfg.types.forEach(function (t) {
+      out += '<option value="' + t.id + '"' + (t.id === sel ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+    });
+    return out;
+  }
+
+  function renderSlots() {
+    var area = $('#slotArea');
+    var html = '';
+    for (var i = 0; i < 3; i++) {
+      var s = state.start.slots[i];
+      var hasType = !!s.type;
+      var tl = 1;
+      for (var k = 0; k < state.cfg.types.length; k++) {
+        if (state.cfg.types[k].id === s.type) tl = state.cfg.types[k].values.length;
+      }
+      var tier = Math.max(1, Math.min(tl, s.tier || 1));
+      var val = 0;
+      for (var k2 = 0; k2 < state.cfg.types.length; k2++) {
+        if (state.cfg.types[k2].id === s.type) val = state.cfg.types[k2].values[tier - 1];
+      }
+      var achieved = null;
+      if (hasType) {
+        achieved = false;
+        state.cfg.reqs.forEach(function (r) {
+          if (r.cands.indexOf(s.type) >= 0 && tier >= (r.minTier || 1)) achieved = true;
+        });
+      }
+      html += '<div class="slot ' + (s.locked ? 'locked' : 'empty') + '">' +
+        '<div class="slot-h">' +
+          '<span class="slot-tag">SLOT ' + (i + 1) + '</span>' +
+          '<span class="slot-chance">出现率 ' + fmt(state.cfg.slotProbs[i], 0) + '%</span>' +
+          '<div class="right">' +
+            (hasType ? '<span class="lock-label">锁定</span>' +
+              '<label class="switch"><input type="checkbox" data-lock="' + i + '"' + (s.locked ? ' checked' : '') + '><span class="slider"></span></label>'
+              : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="slot-grid">' +
+          '<div>' +
+            '<select data-type="' + i + '">' + typeOptions(s.type) + '</select>' +
+          '</div>' +
+          '<div class="slot-tier">' +
+            '<select data-tier="' + i + '"' + (hasType ? '' : ' disabled') + '>' +
+              (function () {
+                var o = '';
+                for (var t2 = 1; t2 <= tl; t2++) o += '<option value="' + t2 + '"' + (t2 === tier ? ' selected' : '') + '>' + t2 + ' 阶</option>';
+                return o;
+              })() +
+            '</select>' +
+            (hasType ? '<div class="tier-val">' + fmt(val, 2) + '%</div>' : '<div class="tier-val">—</div>') +
+          '</div>' +
+        '</div>' +
+        (hasType ?
+          '<div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">' +
+            '<span class="slot-badge ' + (achieved ? 'ok' : 'no') + '">' +
+              (achieved ? '当前阶数已满足目标' : '未达目标阶数') + '</span>' +
+            '<span style="font-size:calc(10.5px + var(--fs-bump));color:var(--txt-3)">' +
+              (s.locked ? '已锁定：不会被「变更效果」重掷' : '未锁定：「变更效果」会重掷它，「变更数值」只换阶数') + '</span>' +
+          '</div>' : '') +
+      '</div>';
+    }
+    area.innerHTML = html;
+
+    $$('[data-type]', area).forEach(function (el) {
+      el.addEventListener('change', function () {
+        var i = +el.getAttribute('data-type');
+        var old = state.start.slots[i];
+        if (!el.value) {
+          state.start.slots[i] = { type: null, tier: 1, locked: false };
+        } else {
+          state.start.slots[i] = { type: el.value, tier: old.tier || 1, locked: old.locked || false };
+        }
+        recalc();
+      });
+    });
+    $$('[data-tier]', area).forEach(function (el) {
+      el.addEventListener('change', function () {
+        var i = +el.getAttribute('data-tier');
+        state.start.slots[i].tier = +el.value;
+        recalc();
+      });
+    });
+    $$('[data-lock]', area).forEach(function (el) {
+      el.addEventListener('change', function () {
+        var i = +el.getAttribute('data-lock');
+        state.start.slots[i].locked = el.checked;
+        recalc();
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------
+   * 渲染：目标条件
+   * ------------------------------------------------------------------ */
+  function renderReqs() {
+    var area = $('#reqArea');
+    var reqs = state.cfg.reqs;
+    var html = '';
+    reqs.forEach(function (r, i) {
+      var tl = 1;
+      r.cands.forEach(function (cid) {
+        for (var k = 0; k < state.cfg.types.length; k++) {
+          if (state.cfg.types[k].id === cid) tl = state.cfg.types[k].values.length;
+        }
+      });
+      if (!r.cands.length) tl = 15;
+      var minT = Math.max(1, Math.min(15, r.minTier || 1));
+      html += '<div class="req">' +
+        '<div class="req-h">' +
+          '<div class="req-idx" title="目标序号，与槽位无关">目标 ' + (i + 1) + '</div>' +
+          '<span class="ttl">' + (r.cands.length > 1 ? '多选一（OR）目标' : '固定目标') + '</span>' +
+          '<div class="right">' +
+            (reqs.length > 1 ? '<button class="btn ghost sm" data-delreq="' + i + '">删除</button>' : '') +
+          '</div>' +
+        '</div>' +
+        (r.cands.length > 1 ? multiNote(r) : '') +
+        '<div class="cands">' +
+          state.cfg.types.map(function (t) {
+            var on = r.cands.indexOf(t.id) >= 0;
+            return '<label class="cand ' + (on ? 'on' : '') + '">' +
+              '<input type="checkbox" data-cand="' + i + '" data-cid="' + t.id + '"' + (on ? ' checked' : '') + '>' +
+              '<span class="dot">' + (on ? '✓' : '') + '</span>' + esc(t.name) +
+              '</label>';
+          }).join('') +
+        '</div>' +
+        '<div class="req-tier">' +
+          '<select data-mintier="' + i + '">' +
+            (function () {
+              var o = '';
+              for (var t2 = 1; t2 <= 15; t2++) {
+                o += '<option value="' + t2 + '"' + (t2 === minT ? ' selected' : '') + '>' +
+                  (t2 === 1 ? '1 阶（不限）' : '≥ ' + t2 + ' 阶') + '</option>';
+              }
+              return o;
+            })() +
+          '</select>' +
+          '<span class="tier-preview" id="tprev-' + i + '">' + tierPreview(r, minT) + '</span>' +
+        '</div>' +
+      '</div>';
+    });
+    area.innerHTML = html;
+
+    $$('[data-cand]', area).forEach(function (el) {
+      el.parentNode.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        var i = +el.getAttribute('data-cand');
+        var cid = el.getAttribute('data-cid');
+        var arr = state.cfg.reqs[i].cands;
+        var pos = arr.indexOf(cid);
+        if (pos >= 0) arr.splice(pos, 1); else arr.push(cid);
+        recalc();
+      });
+    });
+    $$('[data-mintier]', area).forEach(function (el) {
+      el.addEventListener('change', function () {
+        var i = +el.getAttribute('data-mintier');
+        state.cfg.reqs[i].minTier = +el.value;
+        var pv = $('#tprev-' + i);
+        if (pv) pv.innerHTML = tierPreview(state.cfg.reqs[i], +el.value);
+        recalc();
+      });
+    });
+    $$('[data-delreq]', area).forEach(function (el) {
+      el.addEventListener('click', function () {
+        state.cfg.reqs.splice(+el.getAttribute('data-delreq'), 1);
+        recalc();
+      });
+    });
+  }
+
+  /* 多选一目标的说明小字 */
+  function multiNote(r) {
+    return '<div class="req-multi-note">' +
+      '<span class="k">三选一：</span>' +
+      '<span class="v">暴击/爆伤/弹容</span>' +
+      '<span>（已选 ' + r.cands.length + ' 项，命中任意一项即可）</span>' +
+      '</div>';
+  }
+
+  function tierPreview(r, minTier) {
+    if (!r.cands.length) return '<span class="p">未选择词条</span>';
+    var out = [];
+    r.cands.forEach(function (cid) {
+      for (var k = 0; k < state.cfg.types.length; k++) {
+        if (state.cfg.types[k].id === cid) {
+          out.push('<span class="p">' + esc(state.cfg.types[k].name) + '</span> ' +
+            fmt(state.cfg.types[k].values[Math.max(0, Math.min(14, minTier - 1))], 2) + '%');
+        }
+      }
+    });
+    return out.join(' &nbsp;|&nbsp; ');
+  }
+
+  /* ------------------------------------------------------------------
+   * 渲染：高级参数
+   * ------------------------------------------------------------------ */
+  function renderParams() {
+    var sp = $('#slotProbArea');
+    sp.innerHTML = [0, 1, 2].map(function (i) {
+      return '<div>' +
+        '<label class="lbl" style="font-size:calc(10.5px + var(--fs-bump))">槽位 ' + (i + 1) + '</label>' +
+        '<input type="number" data-slotp="' + i + '" step="1" min="0" max="100" value="' + state.cfg.slotProbs[i] + '">' +
+      '</div>';
+    }).join('');
+
+    var ca = $('#costArea');
+    ca.innerHTML = COST_KEYS.map(function (kv) {
+      return '<div>' +
+        '<label class="lbl" style="font-size:calc(10.5px + var(--fs-bump))">' + kv[1] + '</label>' +
+        '<input type="number" data-cost="' + kv[0] + '" step="1" min="0" value="' + state.cfg.costs[kv[0]] + '">' +
+      '</div>';
+    }).join('');
+
+    var wa = $('#weightArea');
+    wa.innerHTML = state.cfg.types.map(function (t) {
+      return '<label style="display:flex;align-items:center;gap:6px;font-size:calc(11.5px + var(--fs-bump))">' +
+        '<span style="flex:0 0 88px;color:var(--txt-2)">' + esc(t.name) + '</span>' +
+        '<input type="number" data-weight="' + t.id + '" step="1" min="0" max="100" value="' + t.weight + '" style="padding:4px 6px;font-size:calc(11px + var(--fs-bump))">' +
+      '</label>';
+    }).join('');
+
+    var ta = $('#tierProbArea');
+    ta.innerHTML = state.cfg.tierProbs.map(function (p, i) {
+      return '<div>' +
+        '<label class="lbl" style="font-size:calc(10px + var(--fs-bump));margin-bottom:2px">' + (i + 1) + ' 阶</label>' +
+        '<input type="number" data-tierp="' + i + '" step="1" min="0" max="100" value="' + p + '" style="padding:4px 6px;font-size:calc(11px + var(--fs-bump))">' +
+      '</div>';
+    }).join('');
+
+    $$('[data-slotp]').forEach(function (el) {
+      el.addEventListener('input', function () {
+        state.cfg.slotProbs[+el.getAttribute('data-slotp')] = el.value === '' ? '' : +el.value;
+        recalc();
+      });
+    });
+    $$('[data-cost]').forEach(function (el) {
+      el.addEventListener('input', function () {
+        state.cfg.costs[el.getAttribute('data-cost')] = el.value === '' ? '' : +el.value;
+        recalc();
+      });
+    });
+    $$('[data-weight]').forEach(function (el) {
+      el.addEventListener('input', function () {
+        var id = el.getAttribute('data-weight');
+        state.cfg.types.forEach(function (t) { if (t.id === id) t.weight = el.value === '' ? '' : +el.value; });
+        recalc();
+      });
+    });
+    $$('[data-tierp]').forEach(function (el) {
+      el.addEventListener('input', function () {
+        state.cfg.tierProbs[+el.getAttribute('data-tierp')] = el.value === '' ? '' : +el.value;
+        recalc();
+      });
+    });
+    updateSums();
+  }
+
+  function updateSums() {
+    var ws = 0, badW = false;
+    state.cfg.types.forEach(function (t) { if (t.weight === '' || !isFinite(t.weight)) badW = true; else ws += +t.weight; });
+    var ts = 0, badT = false;
+    state.cfg.tierProbs.forEach(function (p) { if (p === '' || !isFinite(p)) badT = true; else ts += +p; });
+    var we = $('#weightSum');
+    var te = $('#tierSum');
+    if (we) we.innerHTML = '当前合计：<b style="color:' + (Math.abs(ws - 100) < 1e-6 && !badW ? 'var(--green)' : 'var(--red)') + '">' +
+      fmt(ws, 2) + '%</b>' + (badW ? ' · 存在空值或非法值' : '');
+    if (te) te.innerHTML = '当前合计：<b style="color:' + (Math.abs(ts - 100) < 1e-6 && !badT ? 'var(--green)' : 'var(--red)') + '">' +
+      fmt(ts, 2) + '%</b>' + (badT ? ' · 存在空值或非法值' : '');
+  }
+
+  /* ------------------------------------------------------------------
+   * 渲染：手动策略
+   * ------------------------------------------------------------------ */
+  function renderManual() {
+    var pa = $('#prioArea');
+    pa.innerHTML = [0, 1, 2].map(function (slot) {
+      var pos = state.manual.priority.indexOf(slot);
+      return '<div style="flex:1;min-width:0">' +
+        '<label class="lbl" style="font-size:calc(10.5px + var(--fs-bump))">槽位 ' + (slot + 1) + '</label>' +
+        '<input type="number" data-prio="' + slot + '" min="0" max="2" step="1" value="' + (pos < 0 ? 2 : pos) + '" style="text-align:center">' +
+      '</div>';
+    }).join('') +
+      '<div style="flex:0 0 auto;align-self:flex-end"><span style="font-size:calc(10.5px + var(--fs-bump));color:var(--txt-3)">0 = 最优先</span></div>';
+
+    var mb = $('#manMinBand');
+    var opts = '<option value="0">0（低阶也锁）</option>';
+    for (var b = 1; b <= 3; b++) opts += '<option value="' + b + '"' + (b === state.manual.minBand ? ' selected' : '') + '>' + b + ' 级档位</option>';
+    mb.innerHTML = opts;
+    mb.value = String(state.manual.minBand);
+    mb.addEventListener('change', function () { state.manual.minBand = +mb.value; recalc(); });
+
+    $$('[data-prio]').forEach(function (el) {
+      el.addEventListener('change', function () {
+        var slot = +el.getAttribute('data-prio');
+        var v = Math.max(0, Math.min(2, +el.value || 0));
+        var order = state.manual.priority.slice();
+        var old = order.indexOf(slot);
+        order.splice(old, 1);
+        order.splice(v, 0, slot);
+        state.manual.priority = order;
+        renderManual();
+        recalc();
+      });
+    });
+
+    $('#manMaxLock').value = String(state.manual.maxLocks);
+  }
+
+  /* ------------------------------------------------------------------
+   * 校验
+   * ------------------------------------------------------------------ */
+  function collectErrors() {
+    return E.validateConfig(state.cfg);
+  }
+
+  function showErrors(errors) {
+    var box = $('#globalError');
+    if (!errors || !errors.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="notice err">' +
+      '<span class="ic">⚠</span><div><strong>参数存在错误，已停止计算</strong>' +
+      '<ul>' + errors.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></div></div>';
+  }
+
+  /* ------------------------------------------------------------------
+   * 计算
+   * ------------------------------------------------------------------ */
+  var calcTimer = null;
+  function recalc(immediate) {
+    if (calcTimer) clearTimeout(calcTimer);
+    var run = function () {
+      renderSlots();
+      renderReqs();
+      updateSums();
+      doCalc();
+    };
+    if (immediate) run(); else calcTimer = setTimeout(run, 220);
+  }
+
+  function doCalc() {
+    var errors = collectErrors();
+    showErrors(errors);
+    if (errors.length) {
+      state.result = null;
+      state.manualResult = null;
+      $('#detailCard').style.display = 'none';
+      $('#resultArea').innerHTML = '<div class="empty"><div class="big">⚠</div>请先修正上方参数错误</div>';
+      $('#resultSub').textContent = '参数错误';
+      return;
+    }
+
+    var res = null, man = null;
+    try {
+      res = E.solve(state.cfg, state.start, {});
+    } catch (err) {
+      $('#resultArea').innerHTML = '<div class="notice err"><span class="ic">⚠</span><div><strong>求解异常</strong>' + esc(err.message) + '</div></div>';
+      return;
+    }
+    if (!res.ok) {
+      state.result = null;
+      $('#detailCard').style.display = 'none';
+      $('#resultArea').innerHTML = '<div class="notice err"><span class="ic">⚠</span><div><strong>无法求解</strong><ul>' +
+        res.errors.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></div></div>';
+      return;
+    }
+
+    if (state.manual.enabled) {
+      try {
+        man = E.solve(state.cfg, state.start, {
+          manual: {
+            enabled: true,
+            slotPriority: state.manual.priority,
+            maxLocks: state.manual.maxLocks,
+            minBand: state.manual.minBand,
+            enterPhase2: true
+          }
+        });
+      } catch (e) { man = null; }
+    }
+
+    state.result = res;
+    state.manualResult = man && man.ok ? man : null;
+    $('#resultSub').textContent = '最优策略 · ' + res.states + ' 个状态';
+
+    renderResult(res, state.manualResult);
+    $('#detailCard').style.display = '';
+    renderGuide(res);
+    renderPhase2(res);
+    renderManualCompare(res, state.manualResult);
+    renderDataTable();
+    renderSimulator();
+    switchTab(state.tab);
+  }
+
+  /* ------------------------------------------------------------------
+   * 结果卡片
+   * ------------------------------------------------------------------ */
+  function renderResult(res, man) {
+    var t = res.totals;
+    var area = $('#resultArea');
+    var total = t.stones || 1;
+    var p1w = (t.phase1Stones / total) * 100;
+    var p2w = (t.phase2Stones / total) * 100;
+    var lkw = (t.lockStones / total) * 100;
+
+    var html = '';
+
+    if (t.stones <= 1e-9) {
+      html += '<div class="notice info"><span class="ic">✓</span><div>当前初始状态已满足全部目标条件（词条种类与阶数均达标），<b>无需任何洗练</b>。</div></div>';
+    } else if (res.p1Only) {
+      html += '<div class="notice info"><span class="ic">ℹ</span><div>三个槽位的<b>词条种类已经覆盖全部目标</b>，只差阶数：' +
+        '<b>不需要再点「变更效果」</b>，直接进入「变更数值」阶段把阶数刷上去即可。</div></div>';
+    }
+
+    html += '<div class="metrics">' +
+      '<div class="metric">' +
+        '<div class="k">期望总消耗</div>' +
+        '<div class="v">' + fmt(t.stones, 1) + '<span class="u">颗石头</span></div>' +
+        '<div class="x">约 ' + fmt(t.totalRolls, 1) + ' 次洗练</div>' +
+        '<div class="bar">' +
+          '<i style="width:' + p1w + '%;background:linear-gradient(90deg,#0052D9,#4582E6)"></i>' +
+          '<i style="width:' + p2w + '%;background:linear-gradient(90deg,#E37318,#F0A96B)"></i>' +
+          '<i style="width:' + lkw + '%;background:linear-gradient(90deg,#8C8C8C,#BDBDBD)"></i>' +
+        '</div>' +
+      '</div>' +
+      '<div class="metric blue">' +
+        '<div class="k">第一阶段 · 洗种类</div>' +
+        '<div class="v">' + fmt(t.phase1Stones, 1) + '<span class="u">颗</span></div>' +
+        '<div class="x">' + fmt(t.phase1Rolls, 1) + ' 次「变更效果」</div>' +
+      '</div>' +
+      '<div class="metric gold">' +
+        '<div class="k">第二阶段 · 洗数值</div>' +
+        '<div class="v">' + fmt(t.phase2Stones, 1) + '<span class="u">颗</span></div>' +
+        '<div class="x">' + fmt(t.phase2Rolls, 1) + ' 次「变更数值」</div>' +
+      '</div>' +
+      '<div class="metric">' +
+        '<div class="k">锁定消耗</div>' +
+        '<div class="v">' + fmt(t.lockStones, 1) + '<span class="u">颗</span></div>' +
+        '<div class="x">摊到 ' + fmt(t.totalRolls, 1) + ' 次洗练</div>' +
+      '</div>' +
+    '</div>';
+
+    // 初始状态分析
+    html += '<div class="panel"><h3>初始状态处置 <span class="tag gd">第一步</span></h3>';
+    var actions = [];
+    (res.chosenStart.unlockSlots || []).forEach(function (s) {
+      actions.push('解锁第 ' + (s + 1) + ' 槽');
+    });
+    if (res.chosenStart.act !== -1 && res.chosenStart.act !== res.chosenStart.keepMask) {
+      var add = res.chosenStart.act & ~res.chosenStart.keepMask;
+      for (var s2 = 0; s2 < 3; s2++) if (add & (1 << s2)) actions.push('锁定第 ' + (s2 + 1) + ' 槽');
+    }
+    /* 建议动作 = 这一步真正的操作：
+       · 已达标 → 什么都不用做
+       · 种类已齐备（act === -1）→ 直接洗数值；即使有解锁需求也由阶段二免费处理
+       · 否则才是「洗种类」 */
+    var actText;
+    if (t.stones <= 1e-9) actText = '无需操作：目标已全部达成';
+    else if (res.chosenStart.act === -1) actText = '直接进入「变更数值」阶段（洗阶数）';
+    else if (actions.length) actText = actions.join(' → ');
+    else actText = '保持现状，洗种类';
+    html += '<div class="kv"><span class="k">建议动作</span><span class="v cy">' + esc(actText) + '</span></div>';
+    if (res.p1Only && t.stones > 1e-9) {
+      html += '<div class="kv"><span class="k">词条种类</span><span class="v cy">已全部命中目标，无需洗种类</span></div>';
+    }
+    html += '<div class="kv"><span class="k">初始已满足的目标</span><span class="v">' + countSatisfied(res) + ' / ' + state.cfg.reqs.length + '</span></div>';
+
+    /* ---- 可选锁定方案枚举 ---- */
+    var seenPlan = {};
+    var opts = (res.startOptions || []).slice()
+      .sort(function (a, b) { return a.cost - b.cost; })
+      .filter(function (o) {
+        var key = o.act + '|' + o.cost.toFixed(2);
+        if (seenPlan[key]) return false;
+        seenPlan[key] = 1;
+        return true;
+      });
+    if (opts.length) {
+      html += '<div class="tbl-wrap" style="margin-top:10px;margin-bottom:0"><table class="opts"><thead><tr>' +
+        '<th style="width:24px"></th>' +
+        '<th>起手方案</th><th>起手锁定</th>' +
+        '<th style="text-align:right">期望总消耗</th>' +
+        '<th style="text-align:right">洗种类</th>' +
+        '<th style="text-align:right">洗数值</th>' +
+        '<th style="text-align:right">锁定</th>' +
+        '</tr></thead><tbody>';
+      opts.forEach(function (o, oi) {
+        var isBest = (oi === 0);
+        var diff = o.cost - opts[0].cost;
+        html += '<tr' + (isBest ? ' class="best"' : '') + '>' +
+          '<td class="mid">' + (isBest ? '<span style="color:var(--green);font-weight:900">★</span>' : '') + '</td>' +
+          '<td>' + planLabel(o) +
+            (isBest ? ' <span class="tag-lock ok">当前最优</span>' : '') +
+            (diff > 0.01 ? ' <span style="color:var(--txt-3);font-size:calc(10.5px + var(--fs-bump))">+' + fmt(diff, 1) + '</span>' : '') +
+          '</td>' +
+          '<td style="font-size:calc(11px + var(--fs-bump))">' + slotEntryDesc(o, res.model) + '</td>' +
+          '<td class="num" style="color:' + (isBest ? 'var(--cyan-2)' : 'var(--txt)') + ';font-weight:800">' + fmt(o.cost, 1) + '</td>' +
+          '<td class="num" style="color:var(--txt-2)">' + fmt(o.vec[0], 1) + '</td>' +
+          '<td class="num" style="color:var(--txt-2)">' + fmt(o.vec[1], 1) + '</td>' +
+          '<td class="num" style="color:var(--txt-2)">' + fmt(o.vec[2], 1) + '</td>' +
+          '</tr>';
+      });
+      html += '</tbody></table></div>';
+      html += '<div class="mini-note">' +
+        '上表按「起手锁哪几个槽」枚举方案：<b>锁得越多，单次洗练越贵，但已有词条不会被重掷</b>，' +
+        '取舍由精确解析解给出。' +
+        '</div>';
+    }
+    html += '</div>';
+
+    // 手动策略对比
+    if (man) {
+      var diff = man.totals.stones - t.stones;
+      var pctDiff = t.stones > 0 ? (diff / t.stones) * 100 : 0;
+      html += '<div class="notice ' + (diff > 0.01 ? 'warn' : 'info') + '"><span class="ic">' + (diff > 0.01 ? '⚠' : '✓') + '</span><div>' +
+        '<b>手动策略：' + fmt(man.totals.stones, 1) + ' 颗</b>　vs　最优策略：' + fmt(t.stones, 1) + ' 颗<br>' +
+        (diff > 0.01
+          ? '你指定的手动策略比最优策略多花 <b style="color:var(--gold-2)">' + fmt(diff, 1) + ' 颗石头</b>（+' + fmt(pctDiff, 1) + '%）'
+          : (diff < -0.01 ? '手动策略反而更省 ' + fmt(-diff, 1) + ' 颗（可能最优策略的约束更严格）'
+            : '手动策略与最优策略一致')) +
+        '</div></div>';
+    }
+
+    area.innerHTML = html;
+  }
+
+  /* 把方案的锁定槽位 + 词条 + 阶数写成可读文本 */
+  function slotEntryDesc(opt, model) {
+    if (!opt.keepMask) return '<span style="color:var(--txt-3)">不锁任何槽位</span>';
+    var parts = [];
+    for (var k = 0; k < 3; k++) {
+      if (!(opt.keepMask & (1 << k))) continue;
+      var lb = (opt.keepView || [])[k];
+      var nm = '—', tierTxt = '';
+      if (lb && model) {
+        var t = Math.floor((lb - 1) / 16);
+        if (t >= 0 && t < model.n) nm = model.types[t].name;
+        var sl = state.start.slots[k];
+        if (sl && sl.type && model.types[t] && model.types[t].id === sl.type) tierTxt = ' ' + (sl.tier || 1) + '阶';
+      }
+      parts.push('第' + (k + 1) + '槽「' + nm + tierTxt + '」');
+    }
+    return '锁定 ' + parts.join(' + ') +
+      (pcOf(opt.keepMask) >= 3 ? ' → <b style="color:var(--green)">三槽全锁</b>'
+        : ' <span style="color:var(--txt-3)">（另 ' + (3 - pcOf(opt.keepMask)) + ' 槽可洗）</span>');
+  }
+
+  /* 起手方案的一句话标签：这一步到底做什么 */
+  function planLabel(o) {
+    if (o.cost <= 1e-9) return '无需操作（目标已达成）';
+    if (o.act === -1) return o.keepMask ? '先锁住词条，再洗数值' : '保持现状，直接洗数值';
+    return o.keepMask ? '锁住词条，继续洗种类' : '不锁定，洗种类';
+  }
+
+  /* 初始状态里「已满足的目标数」。
+     目标与槽位之间做最大二分匹配：只要存在一种「目标 ↔ 槽位」的一一对应关系即可，
+     与目标的先后顺序无关（同一槽位只能满足一个目标，同一词条也只能出现在一个槽位里）。
+     未锁定的词条同样算数 —— 它此刻真实存在于装备上（「变更数值」会保留种类）。 */
+  function countSatisfied(res) {
+    var slots = [];
+    for (var s = 0; s < 3; s++) slots.push(s);
+    var reqs = state.cfg.reqs;
+    var cand = [];
+    for (var r = 0; r < reqs.length; r++) {
+      var arr = [];
+      for (var i = 0; i < slots.length; i++) {
+        var sl = state.start.slots[slots[i]];
+        if (!sl || !sl.type) continue;
+        if (reqs[r].cands.indexOf(sl.type) >= 0 && (sl.tier || 1) >= (reqs[r].minTier || 1)) arr.push(i);
+      }
+      cand.push(arr);
+    }
+    var matchSlot = {}, matched = 0;
+    function tryAssign(ri, seen) {
+      var a = cand[ri];
+      for (var k = 0; k < a.length; k++) {
+        var si = a[k];
+        if (seen[si]) continue;
+        seen[si] = 1;
+        if (matchSlot[si] === undefined || tryAssign(matchSlot[si], seen)) {
+          matchSlot[si] = ri;
+          return true;
+        }
+      }
+      return false;
+    }
+    for (var r2 = 0; r2 < reqs.length; r2++) if (tryAssign(r2, {})) matched++;
+    return matched;
+  }
+
+  /* ------------------------------------------------------------------
+   * 分步行动指南
+   * ------------------------------------------------------------------ */
+  function slotName(s) { return '第 ' + (s + 1) + ' 槽'; }
+
+  function pcOf(m) { var c = 0; while (m) { c += m & 1; m >>= 1; } return c; }
+
+  /* 把"本次要新锁哪些槽位"翻译成可读文本 */
+  function lockTargets(row) {
+    if (!row.lockSlots) return '';
+    var parts = [];
+    for (var i = 0; i < 3; i++) {
+      if (!(row.lockSlots & (1 << i))) continue;
+      parts.push(slotName(i));
+    }
+    return parts.join(' + ');
+  }
+
+  /* 描述当前实际锁定的槽位及其词条（来自用户输入） */
+  function describeLockedSlots(res) {
+    var out = [];
+    for (var i = 0; i < 3; i++) {
+      if (!(res.startLocked & (1 << i))) continue;
+      var sl = state.start.slots[i];
+      if (!sl || !sl.type) continue;
+      var nm = '';
+      state.cfg.types.forEach(function (t) { if (t.id === sl.type) nm = t.name; });
+      if (!nm) continue;
+      out.push('第' + (i + 1) + '槽「' + nm + ' ' + (sl.tier || 1) + '阶」');
+    }
+    return out.join('、');
+  }
+
+  function renderGuide(res) {
+    var area = $('#pane-guide');
+    var g = res.guide;
+    var html = '';
+
+    // 概览三步
+    html += '<div class="panel" style="margin-bottom:14px"><h3>策略总览</h3>';
+    var step = 1;
+    html += '<div class="step"><div class="step-n">' + (step++) + '</div><div class="step-c">' +
+      '<div class="t">起步：' + esc(g.start.actionText) + '</div>' +
+      '<div class="d">当前锁定：<b>' + esc(g.start.lockedDesc || g.start.keepDesc) + '</b>　剩余期望：<b>' + fmt(g.start.cost, 1) + '</b> 颗石头</div>' +
+      '</div></div>';
+
+    var lv0 = g.levels[0];
+    var lockRows0 = lv0.rows.filter(function (r) { return r.lock; });
+    var keepRows0 = lv0.rows.filter(function (r) { return !r.lock && !r.enterPhase2; });
+    var doneRows0 = lv0.rows.filter(function (r) { return r.enterPhase2; });
+    var lockedDesc0 = describeLockedSlots(res);
+    /* 最优策略第一步就直接进阶段二 → 种类已经齐备，阶段一整体跳过 */
+    var skipPhase1 = (g.start.act === -1);
+    var allDone = (res.totals.stones <= 1e-9);
+
+    html += '<div class="step"><div class="step-n">' + (step++) + '</div><div class="step-c">' +
+      '<div class="t">阶段一：洗词条种类' + (skipPhase1 ? '（跳过）' : '') + '</div><div class="d">';
+    if (allDone) {
+      html += '<b>目标已全部达成</b>，阶段一不需要任何操作。<br>';
+    } else if (skipPhase1) {
+      html += '<b>不需要洗种类</b>：三个槽位当前已经覆盖全部目标种类' +
+        (lockedDesc0 ? '（已锁：<b>' + esc(lockedDesc0) + '</b>）' : '（均未锁定，但种类都在场）') +
+        '，此时点「变更效果」只会把已经凑齐的种类重掷掉。<br>' +
+        '<span style="color:var(--txt-3)">直接跳到阶段二洗阶数即可。</span>';
+    } else {
+      if (lockedDesc0) {
+        html += '当前已锁：<b>' + esc(lockedDesc0) + '</b>，这些槽位不会被重洗。<br>';
+      }
+      if (lockRows0.length) {
+        html += '当出现下列目标词条时<b>立即锁定</b>，其余情况继续洗：<br>';
+        var bySlot = {};
+        lockRows0.forEach(function (r) {
+          var k = r.slot + '|' + r.labelName;
+          bySlot[k] = r;
+        });
+        Object.keys(bySlot).forEach(function (k) {
+          var r = bySlot[k];
+          var lockTxt = lockTargets(r);
+          html += '· 在 ' + slotName(r.slot) + ' 出现「' + esc(r.labelName) + '」' + (r.bandDesc ? '（' + esc(r.bandDesc) + '）' : '') +
+            ' → <b>锁定 ' + esc(lockTxt) + '</b>（花费 ' + fmt(r.lockCost, 0) + ' 颗），之后剩余期望 <b>' + fmt(r.cost, 1) + '</b> 颗<br>';
+        });
+      } else if (lv0.baseMask === 0) {
+        html += '在 0 锁状态下，<b>不锁定任何词条</b>直接反复洗练直到种类齐备。<br>';
+      } else {
+        html += '在其余未锁定槽位上，<b>不需要再追加锁定</b>，继续洗练直到种类齐备即可。<br>';
+      }
+      if (keepRows0.length) {
+        var seenKeep = {};
+        var keepTxt = [];
+        keepRows0.forEach(function (r) {
+          var k = r.slot + '|' + r.labelName + '|' + r.bandDesc;
+          if (seenKeep[k]) return;
+          seenKeep[k] = 1;
+          keepTxt.push(slotName(r.slot) + '「' + esc(r.labelName) + '」' +
+            (r.bandDesc ? '<span style="opacity:.75"> ' + esc(r.bandDesc) + '</span>' : ''));
+        });
+        html += '<span style="color:var(--txt-3)">不锁定（' + keepTxt.length + ' 种情形）：' +
+          keepTxt.slice(0, 4).join('、') + (keepTxt.length > 4 ? ' 等' : '') + '</span>';
+      }
+    }
+    html += '</div></div></div>';
+
+    html += '<div class="step"><div class="step-n">' + (step++) + '</div><div class="step-c">' +
+      '<div class="t">阶段二：单独洗数值' + (skipPhase1 && !allDone ? '（现在就能开始）' : '') + '</div>' +
+      '<div class="d">' + (allDone
+        ? '目标已达成，<b>无需再洗数值</b>。'
+        : (skipPhase1
+          ? '种类齐备，<b>直接反复点「变更数值」</b>：每次只重掷未锁定槽位的阶数，种类不会变。' +
+            '该阶段期望共花 <b>' + fmt(res.totals.phase2Stones + res.totals.lockStones, 1) + '</b> 颗石头。'
+          : (res.phase2.applicable
+            ? '种类齐备后，<b>解锁阶数未达标的槽位</b>、<b>锁定已达标的槽位</b>，反复点击「变更数值」。' +
+              '该阶段期望再花 <b>' + fmt(res.totals.phase2Stones + res.totals.lockStones, 1) + '</b> 颗石头。'
+            : '按最优策略，通常有机会在洗种类的同一次洗练中直接拿到达标阶数，无需单独洗数值；若最终仍需洗数值，见「数值洗练阶段」页。'))) +
+      '</div></div></div>';
+    html += '</div>';
+
+    // 详细表：只有"确实要洗种类"时才有意义，否则会出现与结论矛盾的锁定建议
+    if (skipPhase1) {
+      html += '<div class="mini-note">阶段一被跳过，因此没有「该锁哪个词条」的表格 —— ' +
+        '你要做的只有一件事：<b>反复点「变更数值」</b>，直到三个槽位的阶数都达标。' +
+        '想要更省石头，可以在某个槽位先达标时把它锁住再继续洗，具体取舍见「数值洗练阶段」页。</div>';
+      area.innerHTML = html;
+      return;
+    }
+
+    g.levels.forEach(function (lv) {
+      var rows = lv.rows;
+      if (!rows.length) return;
+      var lockRows = rows.filter(function (r) { return r.lock || r.enterPhase2; });
+      var show = lockRows.length ? lockRows : rows;
+      var everyDone = rows.length > 0 && rows.every(function (r) { return r.cost <= 1e-9; });
+      html += '<div class="panel" style="margin-bottom:14px">' +
+        '<h3>' + (lv.level === 0
+          ? (res.startLocked ? '第 1 步 · 当前状态（已锁 ' + pcOf(res.startLocked) + ' 个）' : '第 1 步 · 0 锁状态')
+          : '第 2 步 · 已锁 ' + lv.level + ' 个目标词条') +
+        ' <span class="tag">该锁就锁</span>' +
+        (lv.level > 0 && lv.rows[0] && lv.rows[0].baseDesc ? ' <span style="color:var(--gold-2);font-size:calc(11px + var(--fs-bump));font-weight:600">当前已锁：' + esc(lv.rows[0].baseDesc) + '</span>' : '') +
+        '</h3>' +
+        '<div class="tbl-wrap"><table><thead><tr>' +
+        '<th>出现位置</th><th>出现的词条</th><th>阶数状态</th><th>建议动作</th><th style="text-align:right">锁定花费</th><th style="text-align:right">该步后期望剩余</th>' +
+        '</tr></thead><tbody>';
+
+      var sorted = show.slice().sort(function (a, b) {
+        if (a.slot !== b.slot) return a.slot - b.slot;
+        return a.cost - b.cost;
+      });
+      sorted.forEach(function (r) {
+        html += '<tr>' +
+          '<td><b style="color:var(--cyan-2)">' + slotName(r.slot) + '</b></td>' +
+          '<td>' + esc(r.labelName) + '</td>' +
+          '<td style="color:var(--txt-2);font-size:calc(11px + var(--fs-bump) + 1px)">' + esc(r.bandDesc || '—') + '</td>' +
+          '<td><span class="tag-lock ' + (r.cost <= 1e-9 ? 'ok' : (r.enterPhase2 ? 'p2' : (r.lock ? 'yes' : 'no'))) + '">' +
+            (r.cost <= 1e-9 ? '目标已达成' : (r.enterPhase2 ? '进入数值阶段' : (r.lock ? '锁定' : '不锁，继续洗'))) + '</span>' +
+            (r.lockSlots ? ' <span style="color:var(--txt-2);font-size:calc(11px + var(--fs-bump))">→ ' +
+              esc(lockTargets(r)) + '</span>' : '') +
+          '</td>' +
+          '<td class="num" style="color:var(--gold-2)">' + (r.lockCost ? fmt(r.lockCost, 0) : '—') + '</td>' +
+          '<td class="num" style="color:var(--cyan-2)">' + fmt(r.cost, 1) + '</td>' +
+          '</tr>';
+      });
+      html += '</tbody></table></div>';
+      var nLockActual = rows.filter(function (r) { return r.lock; }).length;
+      if (everyDone) {
+        html += '<div class="mini-note"><b style="color:var(--green)">该状态下目标已全部达成</b>，' +
+          '无需继续洗练，因此这里没有可执行的锁定动作。</div>';
+      } else if (!nLockActual) {
+        html += '<div class="mini-note"><b style="color:var(--gold-2)">为什么这里没有「锁定」建议？</b> ' +
+          '在这个状态下，把新洗出的词条锁住要额外付锁定费，而锁定后并不能减少剩余的洗练次数，' +
+          '所以<b>不锁、直接继续洗</b>反而更省石头。只有当锁定能显著提高达成概率时才值得锁。</div>';
+      } else if (lockRows.length < rows.length) {
+        html += '<div class="mini-note">表中仅列出需要「锁定」或「进入数值阶段」的关键情形；其余 ' +
+          (rows.length - lockRows.length) + ' 种情形均<b>不锁定</b>、直接继续洗练。</div>';
+      }
+      html += '</div>';
+    });
+
+    area.innerHTML = html;
+  }
+
+  /* ------------------------------------------------------------------
+   * 数值洗练阶段
+   * ------------------------------------------------------------------ */
+  function renderPhase2(res) {
+    var area = $('#pane-p2');
+    var p2 = res.phase2;
+    var html = '';
+
+    html += '<div class="panel" style="margin-bottom:14px"><h3>阶段二规则 <span class="tag gd">变更数值</span></h3>' +
+      '<div class="step"><div class="step-n">1</div><div class="step-c">' +
+        '<div class="t">词条种类与槽位全部保留</div>' +
+        '<div class="d">每次「变更数值」<b>不会改变种类、也不会让槽位消失</b>，只会重掷<b>未锁定</b>槽位的阶数。' +
+        '因此为保种类而锁住的低阶目标词条，在这里要<b>先解锁</b>才能重刷。</div>' +
+      '</div></div>' +
+      '<div class="step"><div class="step-n">2</div><div class="step-c">' +
+        '<div class="t">保留当前 / 应用更改：低阶数值会一直占着池子</div>' +
+        '<div class="d">每次「变更数值」会先给出新数值，你可以<b>保留当前</b>（什么都不变，只付一次洗练费）' +
+        '或<b>应用更改</b>。同一件装备上<b>不会出现两个相同数值</b>，所以当前这 3 个数值始终把对应档位挡在池外，' +
+        '未锁定槽位只能从剩下的 12 个阶数里不放回抽取。<br>' +
+        '由此得到一条反直觉但确实更省的打法：<b>先留着低阶（出现率 12% 等）的数值不换</b>，' +
+        '等于把最常见的高概率档位永久移出池子，其余槽位抽到高阶的概率随之变高；' +
+        '而占着一个 15 阶（1%）反而会把稀有的高阶挡掉。</div>' +
+      '</div></div>' +
+      '<div class="step"><div class="step-n">3</div><div class="step-c">' +
+        '<div class="t">只在「出现目标阶数」时才应用并锁定</div>' +
+        '<div class="d">保留当前<b>不需要付锁定费</b>；只有当新数值带来新的达标槽位时才「应用更改」，' +
+        '此时才按顺序支付锁定石头把达标槽位锁住，之后它不再参与重掷、并继续占用数值池。</div>' +
+      '</div></div>' +
+      '<div class="step"><div class="step-n">4</div><div class="step-c">' +
+        '<div class="t">每次成本 = 基础消耗 + 已锁定数 × 额外消耗</div>' +
+        '<div class="d">锁 0 个每次 ' + fmt(state.cfg.costs.base, 0) + ' 颗，锁 1 个每次 ' +
+        fmt(+state.cfg.costs.base + +state.cfg.costs.extra, 0) + ' 颗，锁 2 个每次 ' +
+        fmt(+state.cfg.costs.base + 2 * +state.cfg.costs.extra, 0) + ' 颗。</div>' +
+      '</div></div>' +
+      '</div>';
+
+    if (p2 && p2.applicable && p2.rows.length) {
+      html += '<div class="panel" style="margin-bottom:14px"><h3>你的目标在「变更数值」阶段 <span class="tag">精确解析解</span></h3>' +
+        '<div class="mini-note" style="margin-bottom:9px">' +
+        '阶段二只看「词条种类 + 阶数」，与它出现在第几槽无关。你的目标对应：' +
+        p2.rows[0].qs.map(function (q) {
+          return '目标 ' + (q.req + 1) + '「' + esc(q.typeName) + '」需 ≥' + q.minTier + ' 阶（单次达标率 ' + pct(q.q, 2) + '）';
+        }).join('，') + '。</div>' +
+        '<div class="tbl-wrap"><table><thead><tr>' +
+        '<th>已达标槽位数</th><th>仍需达标</th><th>本轮至少提升一个的概率</th><th>单次成本</th>' +
+        '<th style="text-align:right">剩余期望（洗数值）</th><th style="text-align:right">剩余期望（含补锁）</th>' +
+        '</tr></thead><tbody>';
+      p2.rows.slice().sort(function (x, y) { return y.satisfied - x.satisfied; }).forEach(function (r) {
+        if (r.need === 0) return;
+        html += '<tr>' +
+          '<td class="mid"><span class="tier-pill ' + tierClass(r.satisfied + 1) + '">' + r.satisfied + ' / ' + p2.n + '</span></td>' +
+          '<td class="mid">' + r.need + '</td>' +
+          '<td class="num">' + (r.need > 0 ? pct(r.probImprove, 2) : '—') + '</td>' +
+          '<td class="num">' + (r.need > 0 ? fmt(r.perRoll, 0) + ' 颗' : '—') + '</td>' +
+          '<td class="num" style="color:var(--cyan-2)">' + (r.need > 0 ? fmt(r.vec[1], 1) : '0') + '</td>' +
+          '<td class="num" style="color:var(--gold-2)">' + (r.need > 0 ? fmt(r.vec[1] + r.vec[2], 1) : '0') + '</td>' +
+          '</tr>';
+      });
+      html += '</tbody></table></div>' +
+        '<div class="mini-note">「已达标槽位数」指该槽位阶数已满足最低要求；表内按<b>已达标槽位恰好停在其最低达标阶数</b>估算' +
+        '（这既是新规则下最想保留的低数值状态，也让数值池的占用效果最好）。' +
+        '锁住的数值会退出抽取池，所以「先留存低数值词条」在这里会直接体现在剩余期望上。</div></div>';
+    }
+
+    html += buildSingleSlotTierTable(res.model);
+
+    area.innerHTML = html;
+  }
+
+  function tierClass(t) {
+    if (t >= 15) return 'tier-top';
+    if (t >= 13) return 'tier-5';
+    if (t >= 12) return 'tier-4';
+    if (t >= 8) return 'tier-3';
+    if (t >= 4) return 'tier-2';
+    return 'tier-1';
+  }
+
+  /* 单槽洗数值达标概率速查表（1~15 阶） */
+  function buildSingleSlotTierTable(model) {
+    var html = '<div class="panel"><h3>单槽洗数值达标概率 <span class="tag gd">通用速查</span></h3>' +
+      '<div class="tbl-wrap"><table><thead><tr><th>最低阶数要求</th><th>单次洗练达标概率</th><th>期望洗练次数</th>' +
+      '<th>1 个槽位</th><th>2 个槽位</th><th>3 个槽位</th></tr></thead><tbody>';
+    for (var t = 1; t <= 15; t++) {
+      var q = E.probGE(model, t);
+      var e1 = q > 0 ? 1 / q : Infinity;
+      var e2 = q > 0 ? (1 - Math.pow(1 - q, 2)) / q : Infinity;
+      var e3 = q > 0 ? (1 - Math.pow(1 - q, 3)) / q : Infinity;
+      html += '<tr>' +
+        '<td class="mid"><span class="tier-pill ' + tierClass(t) + '">≥ ' + t + ' 阶</span></td>' +
+        '<td class="num">' + pct(q, 2) + '</td>' +
+        '<td class="num">' + (q > 0 ? fmt(1 / q, 2) : '∞') + '</td>' +
+        '<td class="num" style="color:var(--cyan-2)">' + (q > 0 ? fmt(e1, 2) : '∞') + '</td>' +
+        '<td class="num" style="color:var(--cyan-2)">' + (q > 0 ? fmt(e2, 2) : '∞') + '</td>' +
+        '<td class="num" style="color:var(--cyan-2)">' + (q > 0 ? fmt(e3, 2) : '∞') + '</td>' +
+        '</tr>';
+    }
+    html += '</tbody></table></div>' +
+      '<div class="mini-note">右三列为「不锁定任何槽位、n 个槽位一起洗，直到<b>全部</b>达标」的期望次数：' +
+      'E = (1−(1−q)^n) / q。锁定达标槽位会抬高单次成本但降低方差，最优取舍由上方解析解给出。</div></div>';
+    return html;
+  }
+
+  /* ------------------------------------------------------------------
+   * 手动策略对比
+   * ------------------------------------------------------------------ */
+  function renderManualCompare(opt, man) {
+    var area = $('#pane-manual');
+    if (!state.manual.enabled) {
+      area.innerHTML = '<div class="notice info"><span class="ic">ℹ</span><div>' +
+        '左侧「手动策略对比」开关尚未启用。启用后可以指定槽位锁定优先级，' +
+        '并看到该策略与最优策略的石头消耗差距。</div></div>' +
+        '<div class="panel"><h3>最优策略基准</h3>' +
+        '<div class="kv"><span class="k">期望总消耗</span><span class="v cy">' + fmt(opt.totals.stones, 1) + ' 颗</span></div>' +
+        '<div class="kv"><span class="k">第一阶段</span><span class="v">' + fmt(opt.totals.phase1Stones, 1) + ' 颗 / ' + fmt(opt.totals.phase1Rolls, 1) + ' 次</span></div>' +
+        '<div class="kv"><span class="k">第二阶段</span><span class="v">' + fmt(opt.totals.phase2Stones, 1) + ' 颗 / ' + fmt(opt.totals.phase2Rolls, 1) + ' 次</span></div>' +
+        '<div class="kv"><span class="k">锁定消耗</span><span class="v">' + fmt(opt.totals.lockStones, 1) + ' 颗</span></div>' +
+        '</div>';
+      return;
+    }
+    if (!man) {
+      area.innerHTML = '<div class="notice warn"><span class="ic">⚠</span><div>当前手动策略设置无法达成目标，或求解失败。</div></div>';
+      return;
+    }
+    var diff = man.totals.stones - opt.totals.stones;
+    var pctD = opt.totals.stones > 0 ? (diff / opt.totals.stones) * 100 : 0;
+    var html = '<div class="metrics" style="margin-bottom:14px">' +
+      '<div class="metric"><div class="k">最优策略</div><div class="v">' + fmt(opt.totals.stones, 1) +
+        '<span class="u">颗</span></div><div class="x">' + fmt(opt.totals.totalRolls, 1) + ' 次洗练</div></div>' +
+      '<div class="metric ' + (diff > 0.01 ? 'gold' : 'blue') + '"><div class="k">手动策略</div><div class="v">' + fmt(man.totals.stones, 1) +
+        '<span class="u">颗</span></div><div class="x">' + fmt(man.totals.totalRolls, 1) + ' 次洗练</div></div>' +
+      '<div class="metric ' + (diff > 0.01 ? 'gold' : 'blue') + '"><div class="k">差值</div><div class="v">' +
+        (diff > 0.01 ? '+' : '') + fmt(diff, 1) + '<span class="u">颗</span></div><div class="x">' +
+        (diff > 0.01 ? '+' : '') + fmt(pctD, 1) + '%</div></div>' +
+      '</div>';
+
+    html += '<div class="panel"><h3>分项对比</h3><div class="tbl-wrap"><table><thead><tr>' +
+      '<th>项目</th><th style="text-align:right">最优策略</th><th style="text-align:right">手动策略</th><th style="text-align:right">差值</th>' +
+      '</tr></thead><tbody>';
+    var rows = [
+      ['第一阶段洗种类', opt.totals.phase1Stones, man.totals.phase1Stones, '颗'],
+      ['第二阶段洗数值', opt.totals.phase2Stones, man.totals.phase2Stones, '颗'],
+      ['锁定消耗', opt.totals.lockStones, man.totals.lockStones, '颗'],
+      ['洗练次数（阶段一）', opt.totals.phase1Rolls, man.totals.phase1Rolls, '次'],
+      ['洗练次数（阶段二）', opt.totals.phase2Rolls, man.totals.phase2Rolls, '次'],
+      ['<b>总石头</b>', opt.totals.stones, man.totals.stones, '颗']
+    ];
+    rows.forEach(function (r) {
+      var d = r[2] - r[1];
+      html += '<tr><td>' + r[0] + '</td>' +
+        '<td class="num" style="color:var(--cyan-2)">' + fmt(r[1], 2) + '</td>' +
+        '<td class="num" style="color:var(--gold-2)">' + fmt(r[2], 2) + '</td>' +
+        '<td class="num" style="color:' + (d > 0.01 ? 'var(--red)' : (d < -0.01 ? 'var(--green)' : 'var(--txt-3)')) + '">' +
+        (d > 0.01 ? '+' : '') + fmt(d, 2) + ' ' + r[3] + '</td></tr>';
+    });
+    html += '</tbody></table></div></div>';
+
+    var prio = state.manual.priority.map(function (x) { return '槽位' + (x + 1); }).join(' > ');
+    html += '<div class="panel" style="margin-top:14px"><h3>当前手动规则</h3>' +
+      '<div class="kv"><span class="k">锁定优先级</span><span class="v">' + esc(prio) + '</span></div>' +
+      '<div class="kv"><span class="k">最多同时锁定</span><span class="v">' + state.manual.maxLocks + ' 个</span></div>' +
+      '<div class="kv"><span class="k">最低锁定档位</span><span class="v">' +
+        (state.manual.minBand === 0 ? '低阶也锁' : '需达到 ' + state.manual.minBand + ' 级档位') + '</span></div>' +
+      '</div>';
+
+    area.innerHTML = html;
+  }
+
+  /* ------------------------------------------------------------------
+   * 数值总表（1~15 阶 × 9 词条）
+   * ------------------------------------------------------------------ */
+  function renderDataTable() {
+    var area = $('#pane-data');
+    var html = '<div class="panel"><h3>词条数值总表 <span class="tag">1 ~ 15 阶</span></h3>' +
+      '<div class="mini-note" style="margin-bottom:9px">12 阶以上以蓝/黑底色高亮。表格第一列为出现权重，最下方为各阶出现概率。</div>' +
+      '<div class="tbl-wrap"><table class="matrix"><thead><tr><th style="text-align:left">词条 \\ 阶数</th>' +
+      '<th>权重</th>';
+    for (var t = 1; t <= 15; t++) html += '<th>' + t + '</th>';
+    html += '</tr></thead><tbody>';
+    state.cfg.types.forEach(function (ty) {
+      var high = 0;
+      html += '<tr><td class="nm">' + esc(ty.name) + '</td>' +
+        '<td class="mid" style="color:var(--gold-2);font-family:var(--mono)">' + fmt(ty.weight, 0) + '%</td>';
+      ty.values.forEach(function (v, i) {
+        var tier = i + 1;
+        var cls = tier >= 15 ? 'tier-top' : (tier >= 13 ? 'tier-5' : (tier >= 12 ? 'tier-4' : ''));
+        html += '<td class="mid"><span class="' + (cls ? 'tier-pill ' + cls : '') + '" style="' +
+          (cls ? '' : 'color:var(--txt-2)') + '">' + fmt(v, 2) + '</span></td>';
+      });
+      html += '</tr>';
+    });
+    html += '<tr><td class="nm" style="color:var(--cyan-2)">出现概率</td><td class="mid">100%</td>';
+    for (var t2 = 0; t2 < 15; t2++) {
+      html += '<td class="mid" style="font-family:var(--mono);color:var(--txt-2)">' + fmt(state.cfg.tierProbs[t2], 0) + '%</td>';
+    }
+    html += '</tr></tbody></table></div></div>';
+
+    // 单槽洗数值达标概率（与「数值洗练阶段」页共用）
+    html += (state.result ? buildSingleSlotTierTable(state.result.model) : '');
+    area.innerHTML = html;
+  }
+
+  /* ------------------------------------------------------------------
+   * 模拟器
+   * ------------------------------------------------------------------ */
+  function renderSimulator() {
+    var area = $('#pane-sim');
+    // 只构建一次结构；重复调用仅重置输出区
+    if (!document.getElementById('simRun')) {
+      area.innerHTML = '<div class="panel"><h3>模拟洗练测试器 <span class="tag gd">仅供娱乐 / 交叉验证</span></h3>' +
+        '<div class="mini-note" style="margin-bottom:10px">' +
+        '用你当前的参数和<b>最优策略</b>真实跑一遍随机洗练，观察实付石头是否贴近理论期望。' +
+        '随机模拟有波动，多跑几次取平均；<b>核心结果仍以上方精确解析解为准</b>。</div>' +
+        '<div class="row" style="margin-bottom:10px">' +
+          '<select id="simRuns" style="width:auto">' +
+            '<option value="1000">1,000 次</option>' +
+            '<option value="5000" selected>5,000 次</option>' +
+            '<option value="20000">20,000 次</option>' +
+            '<option value="50000">50,000 次</option>' +
+          '</select>' +
+          '<button class="btn primary" id="simRun">▶ 开始模拟</button>' +
+        '</div>' +
+        '<div class="progress"><i id="simBar"></i></div>' +
+        '<div class="sim-out" id="simOut"><span class="dim">尚未模拟。点击上方按钮开始。</span></div>' +
+        '</div>';
+
+      $('#simRun').addEventListener('click', function () {
+        var btn = this;
+        var runs = +$('#simRuns').value;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spin"></span> 模拟中…';
+        $('#simOut').innerHTML = '<span class="dim">正在跑 ' + runs.toLocaleString() + ' 次模拟…</span>';
+        var bar = $('#simBar');
+        bar.style.width = '8%';
+        setTimeout(function () {
+          var t0 = performance.now();
+          var out;
+          try {
+            out = E.simulate(state.cfg, state.start, runs, (Date.now() % 100000) | 1);
+          } catch (e) {
+            out = { ok: false, errors: [e.message] };
+          }
+          var ms = performance.now() - t0;
+          bar.style.width = '100%';
+          btn.disabled = false;
+          btn.textContent = '▶ 再次模拟';
+          if (!out.ok) {
+            $('#simOut').innerHTML = '<span class="warn">模拟失败：' + esc((out.errors || []).join('；')) + '</span>';
+            return;
+          }
+          var th = out.theory;
+          var sim = out.avgStones;
+          var dev = th.stones > 0 ? ((sim / th.stones - 1) * 100) : 0;
+          var lines = [];
+          lines.push('<span class="cy">模拟 ' + out.trials.toLocaleString() + ' 次</span> <span class="dim">耗时 ' + ms.toFixed(0) + ' ms</span>');
+          lines.push('');
+          lines.push('平均总石头      : <span class="ok">' + sim.toFixed(2) + '</span>   <span class="dim">理论 ' + th.stones.toFixed(2) + '</span>');
+          lines.push('  阶段洗种类    : ' + out.avgPhase1.toFixed(2) + '   <span class="dim">理论 ' + th.phase1Stones.toFixed(2) + '</span>');
+          lines.push('  阶段洗数值    : ' + out.avgPhase2.toFixed(2) + '   <span class="dim">理论 ' + th.phase2Stones.toFixed(2) + '</span>');
+          lines.push('  锁定消耗      : ' + out.avgLock.toFixed(2) + '   <span class="dim">理论 ' + th.lockStones.toFixed(2) + '</span>');
+          lines.push('');
+          lines.push('平均洗练次数    : ' + (out.avgRolls1 + out.avgRolls2).toFixed(2) + '   <span class="dim">理论 ' + th.totalRolls.toFixed(2) + '</span>');
+          lines.push('  阶段一        : ' + out.avgRolls1.toFixed(2) + '   <span class="dim">理论 ' + th.phase1Rolls.toFixed(2) + '</span>');
+          lines.push('  阶段二        : ' + out.avgRolls2.toFixed(2) + '   <span class="dim">理论 ' + th.phase2Rolls.toFixed(2) + '</span>');
+          lines.push('');
+          var good = Math.abs(dev) < 3;
+          lines.push('偏差           : <span class="' + (good ? 'ok' : 'warn') + '">' + (dev > 0 ? '+' : '') + dev.toFixed(2) + '%</span>' +
+            (good ? '  <span class="ok">✓ 与解析解吻合</span>' : '  <span class="dim">（随机波动，可多跑几次）</span>'));
+          $('#simOut').innerHTML = lines.join('\n');
+        }, 40);
+      });
+      return;
+    }
+    // 已存在：保留结构，仅标记需要重置
+    var out = $('#simOut');
+    if (out && /正在跑/.test(out.textContent)) return;
+  }
+
+  /* ------------------------------------------------------------------
+   * Tab 切换
+   * ------------------------------------------------------------------ */
+  function switchTab(id) {
+    state.tab = id;
+    $$('#tabs .tab').forEach(function (t) {
+      t.classList.toggle('on', t.getAttribute('data-pane') === id);
+    });
+    $$('.tabpane').forEach(function (p) {
+      p.classList.toggle('on', p.id === id);
+    });
+  }
+
+  /* ------------------------------------------------------------------
+   * 预设
+   * ------------------------------------------------------------------ */
+  /* 预设只覆盖「目标条件」这一项自己的默认设置。
+     ⚠ 它绝不改动以下用户输入：
+        · 初始状态（当前装备）state.start —— 已填的槽位词条 / 阶数 / 锁定开关原样保留
+        · 高级参数（词条种类权重、1~15 阶概率、槽位出现概率、洗练与锁定成本）
+        · 手动策略对比设置（锁定优先级、最大锁定数、阶数阈值）
+     另外：目标不绑定槽位，每条目标都可以由任意一个槽位命中，
+     所以预设只描述「需要什么词条 + 最低阶数」，不写「第几槽」。 */
+  function applyPresetReqs(rawReqs) {
+    state.cfg.reqs = rawReqs.map(function (r) {
+      return { cands: r.cands.slice(), minTier: r.minTier };
+    });
+  }
+
+  var PRESETS = [
+    {
+      name: '攻优弹',
+      short: '攻优弹',
+      desc: '攻击力 + 优越代码伤害 + 最大装弹数（任意槽位命中即算）',
+      icon: '⚔',
+      apply: function () {
+        applyPresetReqs([
+          { cands: ['atk'], minTier: 1 },
+          { cands: ['elite'], minTier: 1 },
+          { cands: ['ammo'], minTier: 1 }
+        ]);
+      }
+    },
+    {
+      name: '攻优弹（≥11 阶）',
+      short: '攻优弹 ≥11',
+      desc: '三条都要求 ≥11 阶，会大量进入洗数值阶段（任意槽位命中即算）',
+      icon: '▲',
+      apply: function () {
+        applyPresetReqs([
+          { cands: ['atk'], minTier: 11 },
+          { cands: ['elite'], minTier: 11 },
+          { cands: ['ammo'], minTier: 11 }
+        ]);
+      }
+    },
+    {
+      name: '攻优 + 三选一',
+      short: '攻优 + 三选一',
+      desc: '攻击 + 优；第三条接受 暴伤/暴击/弹容 任一，出现在任意槽位都算',
+      icon: '✦',
+      apply: function () {
+        applyPresetReqs([
+          { cands: ['atk'], minTier: 1 },
+          { cands: ['elite'], minTier: 1 },
+          { cands: ['cdmg', 'crit', 'ammo'], minTier: 1 }
+        ]);
+      }
+    },
+    {
+      name: '攻优（≥11 阶）+ 三选一（≥7 阶）',
+      short: '攻优 ≥11 + 三选一 ≥7',
+      desc: '攻/优需 ≥11 阶；暴伤/暴击/弹容 任一 ≥7 阶，出现在任意槽位都算',
+      icon: '◆',
+      apply: function () {
+        applyPresetReqs([
+          { cands: ['atk'], minTier: 11 },
+          { cands: ['elite'], minTier: 11 },
+          { cands: ['cdmg', 'crit', 'ammo'], minTier: 7 }
+        ]);
+      }
+    }
+  ];
+
+  function renderPresets() {
+    var area = $('#presetArea');
+    area.innerHTML = PRESETS.map(function (p, i) {
+      return '<button class="preset chip-preset" data-preset="' + i + '" title="' + esc(p.desc) + '">' +
+        '<span class="ico">' + p.icon + '</span>' +
+        '<span class="nm">' + esc(p.short || p.name) + '</span>' +
+        '</button>';
+    }).join('');
+    $$('[data-preset]', area).forEach(function (el) {
+      el.addEventListener('click', function () {
+        PRESETS[+el.getAttribute('data-preset')].apply();
+        renderAll();
+        recalc(true);
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------
+   * 事件绑定
+   * ------------------------------------------------------------------ */
+  /* 高级参数折叠：默认收起，点击标题或回车/空格切换 */
+  function setupAdvToggle() {
+    var head = $('#advHead');
+    var body = $('#advBody');
+    if (!head || !body) return;
+    function setOpen(open) {
+      head.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) body.removeAttribute('hidden');
+      else body.setAttribute('hidden', '');
+      var sub = head.querySelector('.sub');
+      if (sub) sub.textContent = open ? '可编辑 · 点击标题收起' : '可编辑 · 默认收起';
+    }
+    head.addEventListener('click', function () {
+      setOpen(head.getAttribute('aria-expanded') !== 'true');
+    });
+    head.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+        ev.preventDefault();
+        setOpen(head.getAttribute('aria-expanded') !== 'true');
+      }
+    });
+    setOpen(false);   // 默认收起
+  }
+
+  function bind() {
+    setupAdvToggle();
+    $('#addReq').addEventListener('click', function () {
+      if (state.cfg.reqs.length >= 3) return;
+      state.cfg.reqs.push({ cands: ['atk'], minTier: 1 });
+      recalc();
+    });
+
+    $('#manualOn').addEventListener('change', function () {
+      state.manual.enabled = this.checked;
+      $('#manualArea').style.display = this.checked ? '' : 'none';
+      recalc();
+    });
+
+    $('#manMaxLock').addEventListener('change', function () {
+      state.manual.maxLocks = +this.value;
+      recalc();
+    });
+
+    $('#resetParams').addEventListener('click', function () {
+      var d = E.defaultConfig();
+      state.cfg.slotProbs = d.slotProbs.slice();
+      state.cfg.tierProbs = d.tierProbs.slice();
+      state.cfg.costs = d.costs;
+      state.cfg.types.forEach(function (t, i) {
+        t.weight = d.types[i].weight;
+        t.values = d.types[i].values.slice();
+      });
+      renderAll();
+      recalc(true);
+    });
+
+    $('#exportCfg').addEventListener('click', function () {
+      var json = JSON.stringify({ cfg: state.cfg, start: state.start, manual: state.manual }, null, 2);
+      var ta = document.createElement('textarea');
+      ta.value = json;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      var btn = this;
+      var old = btn.textContent;
+      btn.textContent = '已复制 ✓';
+      setTimeout(function () { btn.textContent = old; }, 1400);
+    });
+
+    $$('#tabs .tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        switchTab(t.getAttribute('data-pane'));
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------
+   * 启动
+   * ------------------------------------------------------------------ */
+  function renderAll() {
+    renderSlots();
+    renderReqs();
+    renderParams();
+    renderManual();
+    renderPresets();
+  }
+
+  function init() {
+    bind();
+    renderAll();
+    doCalc();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
+</script>
+</body>
+</html>

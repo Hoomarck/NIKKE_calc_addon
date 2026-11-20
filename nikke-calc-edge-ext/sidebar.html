@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIKKE 装备洗词条期望计算器 · 同步面板</title>
+<link rel="stylesheet" href="sidebar.css">
+<meta name="theme-color" id="metaThemeColor" content="#F3F3F3">
+<script src="theme.js"></script>
+</head>
+<body>
+<div class="sb-shell">
+  <header class="sb-top">
+    <div class="sb-brand">
+      <div class="sb-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M12 22V12"/><path d="m3 7 9 5 9-5"/>
+        </svg>
+      </div>
+      <div class="sb-title-wrap">
+        <h1 class="sb-title">NIKKE 洗词条计算器</h1>
+        <span class="sb-subtitle">Blablalink 装备同步面板</span>
+      </div>
+    </div>
+    <div class="sb-top-actions">
+      <div class="theme-switch" role="group" aria-label="界面主题">
+        <button type="button" data-theme-set="auto" aria-pressed="true" title="跟随系统外观">自动</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false" title="暗色主题">暗</button>
+        <button type="button" data-theme-set="light" aria-pressed="false" title="日间主题">亮</button>
+        <span class="sr" id="themeNow" aria-live="polite"></span>
+      </div>
+      <button type="button" class="btn ghost sm" id="btnOpenSidebar" title="在 Edge 侧边栏常驻打开（可边同步边计算）">📌 侧边栏</button>
+    </div>
+  </header>
+
+  <main class="sb-main">
+    <button type="button" class="btn primary full lg" id="btnOpenCalc">🚀 打开装备洗词条计算器（完整页）</button>
+
+    <div class="sb-alert warn" id="permBanner" hidden>
+      <div class="sb-alert-body">
+        <strong>需要允许访问 Blablalink</strong>
+        <p>Edge 尚未授予 <code>blablalink.com</code> 访问权限，授予后才能检测登录态并同步角色装备。</p>
+      </div>
+      <button type="button" class="btn primary sm" id="btnGrantPerm">授予权限</button>
+    </div>
+
+    <div class="sb-toast" id="toastBar" hidden aria-live="polite"></div>
+
+    <section class="card">
+      <div class="card-h">
+        <span class="num">1</span>
+        <h2>Blablalink 登录与 Cookie</h2>
+        <span class="status-pill checking" id="loginStatusBadge">检测中…</span>
+      </div>
+      <div class="card-b">
+        <div class="info-box" id="loginDetail">正在读取浏览器 Cookie 与本地同步缓存…</div>
+        <div class="btn-row">
+          <button type="button" class="btn ghost" id="btnOpenLogin">打开 Blablalink 登录</button>
+          <button type="button" class="btn" id="btnSaveCookie">保存 / 更新 Cookie</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h">
+        <span class="num">2</span>
+        <h2>服务器与装备同步</h2>
+        <span class="sub" id="syncSummarySub">未同步</span>
+      </div>
+      <div class="card-b">
+        <div class="field">
+          <label class="lbl" for="serverSelect">登录服务器区域</label>
+          <select id="serverSelect">
+            <option value="global">国际 / 日 / 韩 / 北美 / 东南亚 (Global)</option>
+            <option value="hmt">港澳台 (HMT)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="lbl" for="manualAreaInput">
+            手动指定 area_id <span class="hint">（可选，留空自动探测）</span>
+          </label>
+          <input type="text" id="manualAreaInput" inputmode="numeric" placeholder="例如 84 或 91（留空自动识别）">
+          <div class="field-err" id="manualAreaError" hidden>请输入正整数或留空</div>
+        </div>
+        <button type="button" class="btn primary full" id="btnSync">🔄 一键同步角色与装备数据</button>
+        <div class="sync-hint" id="syncGuardHint" hidden></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h">
+        <span class="num">3</span>
+        <h2>同步日志</h2>
+        <div class="card-h-tools">
+          <button type="button" class="btn ghost sm" id="btnCopyLog">复制日志</button>
+          <button type="button" class="btn ghost sm" id="btnClearLog">清空</button>
+        </div>
+      </div>
+      <div class="card-b">
+        <div class="log-box" id="syncLogBox" aria-live="off">暂无日志。点击上方「一键同步角色与装备数据」开始获取。</div>
+      </div>
+    </section>
+
+    <footer class="sb-foot">
+      <p>🔒 <b>隐私说明</b>：Cookie 与角色装备数据仅保存于本地浏览器存储，仅在您手动点击操作时与 <code>blablalink.com</code> 通信。</p>
+      <p>🔗 数据抓取逻辑参考 ExiaInvasion 与 NIKKE-Workshop；期望求解使用精确马尔可夫决策过程模型。</p>
+    </footer>
+  </main>
+</div>
+<script type="module" src="sidebar.js"></script>
+</body>
+</html>

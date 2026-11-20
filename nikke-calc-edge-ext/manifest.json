@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "NIKKE 装备洗词条期望计算器",
+  "short_name": "NIKKE洗词条",
+  "version": "1.1.0",
+  "description": "NIKKE 企业装洗词条精确 MDP 期望计算器，支持通过 Blablalink Cookie 同步角色装备与四装备词条汇总导入。",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "NIKKE 洗词条期望计算器",
+    "default_popup": "sidebar.html?mode=popup",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "sidebar.html"
+  },
+  "permissions": [
+    "cookies",
+    "storage",
+    "tabs",
+    "sidePanel",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "host_permissions": [
+    "*://*.blablalink.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  }
+}
