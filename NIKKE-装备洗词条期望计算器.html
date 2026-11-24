@@ -2321,28 +2321,46 @@ tr.best:hover td{background:var(--tint-cy-3)}
       return startViewFull.slice();
     }
 
-    /* 枚举 keepMask 的所有组合（保持至少 1 个可洗槽位） */
+    /* 枚举 keepMask 的所有组合（起手锁哪几个槽，然后直接开洗或进阶段二） */
+    var curDynLocked = inLocked & ~fixedMask;
     for (var bi = 0; bi < (1 << candSlots.length); bi++) {
       var keepMask = 0;
       for (var j = 0; j < candSlots.length; j++) if (bi & (1 << j)) keepMask |= (1 << candSlots[j]);
-      /* 通常必须至少留 1 个未锁定槽位用于洗练；
-         但「三个槽位已经全部达标」是合法终态 —— 一次都不用洗，直接 0 消耗。
-         此时全锁组合同样要进入方案空间，否则会误报「无法达成目标」。 */
       var allSlotsLocked = (pc(keepMask) + pc(fixedMask) >= 3);
-      /* 必须包含所有已锁定的目标槽位吗？不 —— 允许"解锁"作为一个可选方案（免费） */
       var viewForState = viewOfKeep();
-      var dec = decide(keepMask, viewForState);
-      if (!dec) continue;
-      if (allSlotsLocked && tot(dec.vec) > 1e-9) continue;   // 全锁却还没达标 → 进不了洗练，丢弃
+      var initLockSlots = keepMask & ~curDynLocked;
+      var keptCount = pc(curDynLocked & keepMask) + pc(fixedMask);
+      var targetCount = pc(keepMask) + pc(fixedMask);
+      var initLockCost = lockDeltaCost(model, keptCount, targetCount);
+
+      var bestOptDec = null;
+      // 动作 A：种类已齐备时直接进入阶段二（洗数值）
+      var p2Opt = phase2Entry(model, viewForState, keepMask, fixedMask);
+      if (p2Opt !== null) {
+        var p2Vec = vadd([0, p2Opt[1], p2Opt[2], 0, p2Opt[4]], [0, 0, initLockCost, 0, 0]);
+        bestOptDec = { act: -1, vec: p2Vec };
+      }
+      // 动作 B：以 keepMask 作为锁定状态立即进入阶段一洗种类
+      if (!allSlotsLocked) {
+        var stKeep = p1.stateOf(keepMask, labelsAt(keepMask, viewForState));
+        if (stKeep && stKeep.feasible && W[stKeep.key] && !isInf(W[stKeep.key])) {
+          var p1Vec = vadd(W[stKeep.key], [0, 0, initLockCost, 0, 0]);
+          if (!bestOptDec || tot(p1Vec) < tot(bestOptDec.vec)) {
+            bestOptDec = { act: keepMask, vec: p1Vec };
+          }
+        }
+      }
+      if (!bestOptDec) continue;
+      if (allSlotsLocked && tot(bestOptDec.vec) > 1e-9) continue;   // 全锁却还没达标 → 进不了洗练，丢弃
       var keepLabels = [];
       for (var kl = 0; kl < 3; kl++) if (keepMask & (1 << kl)) keepLabels.push(viewForState[kl]);
       var opt = {
         keepMask: keepMask,
         keepLabels: keepLabels,
         keepView: viewForState,
-        act: dec.act,
-        vec: dec.vec,
-        cost: tot(dec.vec),
+        act: bestOptDec.act,
+        vec: bestOptDec.vec,
+        cost: tot(bestOptDec.vec),
         unlockSlots: (function () {
           var arr = [];
           for (var u = 0; u < 3; u++) {
@@ -2350,11 +2368,16 @@ tr.best:hover td{background:var(--tint-cy-3)}
           }
           return arr;
         })(),
-        newlyLocked: dec.act >= 0 ? (dec.act & ~keepMask) : 0,
-        locksCount: pc(keepMask) + pc(fixedMask)
+        initLockSlots: initLockSlots,
+        initLockCost: initLockCost,
+        newlyLocked: bestOptDec.act >= 0 ? (bestOptDec.act & ~curDynLocked) : 0,
+        locksCount: targetCount
       };
       startOptions.push(opt);
-      if (!bestStart || tot(dec.vec) < tot(bestStart.vec)) bestStart = opt;
+      if (!bestStart || opt.cost < bestStart.cost - 1e-9 ||
+          (Math.abs(opt.cost - bestStart.cost) <= 1e-9 && opt.initLockCost < bestStart.initLockCost)) {
+        bestStart = opt;
+      }
     }
     if (!bestStart) {
       /* 三个槽位都被锁死时没有任何可洗槽位：这不是"目标无法达成"，而是需要先解锁 */
@@ -2525,10 +2548,34 @@ tr.best:hover td{background:var(--tint-cy-3)}
     W_REF = W;
 
     /* ---------- 起步 ---------- */
+    var initLockSlots = bestStart.initLockSlots || 0;
+    var initLockCost = bestStart.initLockCost || 0;
+    var unlockList = bestStart.unlockSlots || [];
+    var unlockDesc = unlockList.map(function (u) { return '第' + (u + 1) + '槽'; }).join(' + ');
+    var startActionText;
+    if (bestStart.act === -1 && tot(bestStart.vec) <= 1e-9) {
+      startActionText = '目标已全部达成：不用再洗练';
+    } else if (bestStart.act === -1) {
+      startActionText = '词条种类已齐备，直接进入「变更数值」阶段';
+    } else if (unlockList.length && initLockSlots) {
+      startActionText = '先解锁 ' + unlockDesc + '，再锁定 ' + describeMask(initLockSlots, model) +
+        '（花费 ' + initLockCost + ' 颗），然后点击「变更效果」洗种类';
+    } else if (initLockSlots) {
+      startActionText = '先锁定 ' + describeMask(initLockSlots, model) +
+        '（花费 ' + initLockCost + ' 颗），再点击「变更效果」继续洗种类';
+    } else if (unlockList.length) {
+      startActionText = '先解锁 ' + unlockDesc + '（免费），再点击「变更效果」继续洗种类';
+    } else {
+      startActionText = (inLocked ? '保持当前锁定（不解锁），' : '不锁定任何槽位，') +
+        '直接点击「变更效果」洗种类';
+    }
+
     guide.start = {
       keepMask: bestStart.keepMask,
-      unlock: bestStart.unlockSlots || [],
-      keepDesc: describeMask(bestStart.keepMask, model),
+      unlock: unlockList,
+      initLockSlots: initLockSlots,
+      initLockCost: initLockCost,
+      keepDesc: describeMask(bestStart.keepMask | fixedMask, model),
       lockedDesc: (function () {
         var arr = [];
         for (var k = 0; k < 3; k++) {
@@ -2537,12 +2584,7 @@ tr.best:hover td{background:var(--tint-cy-3)}
         return arr.length ? arr.join(' + ') : '无锁定';
       })(),
       act: bestStart.act,
-      actionText: (bestStart.act === -1 && tot(bestStart.vec) <= 1e-9)
-        ? '目标已全部达成：不用再洗练'
-        : (bestStart.act === -1 ? '词条种类已齐备，直接进入「变更数值」阶段' :
-          (bestStart.act === bestStart.keepMask
-            ? '保持当前锁定（不解锁），点击「变更效果」继续洗种类'
-            : '立即锁定 ' + describeMask(bestStart.act & ~bestStart.keepMask, model) + '，再点击「变更效果」')),
+      actionText: startActionText,
       vec: bestStart.vec,
       cost: tot(bestStart.vec)
     };
@@ -2569,11 +2611,18 @@ tr.best:hover td{background:var(--tint-cy-3)}
     for (s = 0; s < 3; s++) if (curMask & (1 << s)) curLabels.push(startView[s]);
     var curBaseDesc = curMask ? describeMask(curMask, model) : '无';
 
+    var lockedTypes0 = {};
+    for (s = 0; s < 3; s++) {
+      if ((curMask & (1 << s)) && startView[s] !== ABSENT) lockedTypes0[labType(startView[s])] = 1;
+      if ((fixedMask & (1 << s)) && fixedLabels[s] !== ABSENT) lockedTypes0[labType(fixedLabels[s])] = 1;
+    }
+
     var level0 = { level: 0, baseMask: curMask, baseLabels: curLabels, rows: [], started: [] };
     for (s = 0; s < 3; s++) {
       if (fixedMask & (1 << s)) continue;
       if (curMask & (1 << s)) continue;       // 已锁定槽位不作为"新出现"参与枚举
       for (li = 0; li < labelRows.length; li++) {
+        if (lockedTypes0[labType(labelRows[li])]) continue;  // 已锁定槽位占用的词条种类不可能再次出现
         // 起点视图：已锁定槽位带着自己的词条，其余槽位只有本次枚举的那个有值
         var view = baseView();
         for (var lk = 0; lk < 3; lk++) {
@@ -2607,10 +2656,14 @@ tr.best:hover td{background:var(--tint-cy-3)}
       var smSlot = 0;
       for (s2 = 0; s2 < 3; s2++) if (sm & (1 << s2)) smSlot = s2;
       if (smSlot !== st0.slot) continue;
+      var lockedTypes1 = {};
+      lockedTypes1[labType(st0.label)] = 1;
+      for (s2 = 0; s2 < 3; s2++) if ((fixedMask & (1 << s2)) && fixedLabels[s2] !== ABSENT) lockedTypes1[labType(fixedLabels[s2])] = 1;
       for (var s4 = 0; s4 < 3; s4++) {
         if (sm & (1 << s4)) continue;
         if (fixedMask & (1 << s4)) continue;
         for (var lj = 0; lj < labelRows.length; lj++) {
+          if (lockedTypes1[labType(labelRows[lj])]) continue; // 互斥词条不可能再次出现
           var dk = sm + '|' + s4 + '|' + labelRows[lj];
           if (emitted[dk]) continue;
           var view1 = baseView();
@@ -2785,12 +2838,13 @@ tr.best:hover td{background:var(--tint-cy-3)}
       if (Date.now() - tStart > 2500) break;             // 总时间预算：保证页面不卡死
       var tTrial = Date.now();
       /* 起点必须与"被采纳的起始方案"完全一致：
-         选用 keepMask 保留的槽位带着词条进入，其余槽位为空（下一次洗练会被重掷）。 */
+         选用 keepMask 保留的槽位带着词条进入，先计入起手新增锁定消耗。 */
+      var initLockCost = sol.chosenStart.initLockCost || 0;
       var mask = sol.chosenStart.keepMask;
       var view = (sol.chosenStart.keepView || sol.startLabels).slice();
       var guard = 0;
       /* 单次模拟先在局部累积，只有跑完的样本才计入统计 */
-      var cTotal = 0, cP1 = 0, cP2 = 0, cLock = 0, cR1 = 0, cR2 = 0;
+      var cTotal = initLockCost, cP1 = 0, cP2 = 0, cLock = initLockCost, cR1 = 0, cR2 = 0;
 
       /* ---------- 阶段一：严格按策略 —— 锁定 → 再洗 → 锁定 → ... ---------- */
       while (guard++ < 500) {
@@ -3081,11 +3135,14 @@ tr.best:hover td{background:var(--tint-cy-3)}
       for (var k2 = 0; k2 < state.cfg.types.length; k2++) {
         if (state.cfg.types[k2].id === s.type) val = state.cfg.types[k2].values[tier - 1];
       }
-      var achieved = null;
+      var achieved = null, isTarget = false;
       if (hasType) {
         achieved = false;
         state.cfg.reqs.forEach(function (r) {
-          if (r.cands.indexOf(s.type) >= 0 && tier >= (r.minTier || 1)) achieved = true;
+          if (r.cands.indexOf(s.type) >= 0) {
+            isTarget = true;
+            if (tier >= (r.minTier || 1)) achieved = true;
+          }
         });
       }
       html += '<div class="slot ' + (s.locked ? 'locked' : 'empty') + '">' +
@@ -3116,7 +3173,7 @@ tr.best:hover td{background:var(--tint-cy-3)}
         (hasType ?
           '<div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">' +
             '<span class="slot-badge ' + (achieved ? 'ok' : 'no') + '">' +
-              (achieved ? '当前阶数已满足目标' : '未达目标阶数') + '</span>' +
+              (achieved ? '当前阶数已满足目标' : (isTarget ? '未达目标阶数' : '非目标词条')) + '</span>' +
             '<span style="font-size:calc(10.5px + var(--fs-bump));color:var(--txt-3)">' +
               (s.locked ? '已锁定：不会被「变更效果」重掷' : '未锁定：「变更效果」会重掷它，「变更数值」只换阶数') + '</span>' +
           '</div>' : '') +
@@ -3233,9 +3290,15 @@ tr.best:hover td{background:var(--tint-cy-3)}
 
   /* 多选一目标的说明小字 */
   function multiNote(r) {
+    var names = r.cands.map(function (cid) {
+      for (var k = 0; k < state.cfg.types.length; k++) {
+        if (state.cfg.types[k].id === cid) return state.cfg.types[k].name;
+      }
+      return cid;
+    });
     return '<div class="req-multi-note">' +
-      '<span class="k">三选一：</span>' +
-      '<span class="v">暴击/爆伤/弹容</span>' +
+      '<span class="k">多选一：</span>' +
+      '<span class="v">' + esc(names.join(' / ')) + '</span>' +
       '<span>（已选 ' + r.cands.length + ' 项，命中任意一项即可）</span>' +
       '</div>';
   }
@@ -3508,9 +3571,9 @@ tr.best:hover td{background:var(--tint-cy-3)}
     (res.chosenStart.unlockSlots || []).forEach(function (s) {
       actions.push('解锁第 ' + (s + 1) + ' 槽');
     });
-    if (res.chosenStart.act !== -1 && res.chosenStart.act !== res.chosenStart.keepMask) {
-      var add = res.chosenStart.act & ~res.chosenStart.keepMask;
-      for (var s2 = 0; s2 < 3; s2++) if (add & (1 << s2)) actions.push('锁定第 ' + (s2 + 1) + ' 槽');
+    var initAdd = res.chosenStart.initLockSlots || 0;
+    if (res.chosenStart.act !== -1 && initAdd) {
+      for (var s2 = 0; s2 < 3; s2++) if (initAdd & (1 << s2)) actions.push('锁定第 ' + (s2 + 1) + ' 槽');
     }
     /* 建议动作 = 这一步真正的操作：
        · 已达标 → 什么都不用做
@@ -3519,8 +3582,8 @@ tr.best:hover td{background:var(--tint-cy-3)}
     var actText;
     if (t.stones <= 1e-9) actText = '无需操作：目标已全部达成';
     else if (res.chosenStart.act === -1) actText = '直接进入「变更数值」阶段（洗阶数）';
-    else if (actions.length) actText = actions.join(' → ');
-    else actText = '保持现状，洗种类';
+    else if (actions.length) actText = actions.join(' → ') + ' → 点击「变更效果」洗种类';
+    else actText = res.startLocked ? '保持当前锁定，洗种类' : '不锁定，直接洗种类';
     html += '<div class="kv"><span class="k">建议动作</span><span class="v cy">' + esc(actText) + '</span></div>';
     if (res.p1Only && t.stones > 1e-9) {
       html += '<div class="kv"><span class="k">词条种类</span><span class="v cy">已全部命中目标，无需洗种类</span></div>';
@@ -3532,7 +3595,7 @@ tr.best:hover td{background:var(--tint-cy-3)}
     var opts = (res.startOptions || []).slice()
       .sort(function (a, b) { return a.cost - b.cost; })
       .filter(function (o) {
-        var key = o.act + '|' + o.cost.toFixed(2);
+        var key = o.act + '|' + o.keepMask + '|' + o.cost.toFixed(2);
         if (seenPlan[key]) return false;
         seenPlan[key] = 1;
         return true;
@@ -3610,8 +3673,10 @@ tr.best:hover td{background:var(--tint-cy-3)}
   /* 起手方案的一句话标签：这一步到底做什么 */
   function planLabel(o) {
     if (o.cost <= 1e-9) return '无需操作（目标已达成）';
-    if (o.act === -1) return o.keepMask ? '先锁住词条，再洗数值' : '保持现状，直接洗数值';
-    return o.keepMask ? '锁住词条，继续洗种类' : '不锁定，洗种类';
+    if (o.act === -1) return o.initLockSlots ? '先锁住词条，再洗数值' : '直接进入「变更数值」';
+    if (o.initLockSlots) return '锁住词条，继续洗种类';
+    if (o.unlockSlots && o.unlockSlots.length) return '解锁后继续洗种类';
+    return o.keepMask ? '保持锁定，继续洗种类' : '不锁定，直接洗种类';
   }
 
   /* 初始状态里「已满足的目标数」。
@@ -3668,11 +3733,11 @@ tr.best:hover td{background:var(--tint-cy-3)}
     return parts.join(' + ');
   }
 
-  /* 描述当前实际锁定的槽位及其词条（来自用户输入） */
-  function describeLockedSlots(res) {
+  /* 描述指定 mask 的槽位及其词条（来自用户输入） */
+  function describeMaskSlots(mask) {
     var out = [];
     for (var i = 0; i < 3; i++) {
-      if (!(res.startLocked & (1 << i))) continue;
+      if (!(mask & (1 << i))) continue;
       var sl = state.start.slots[i];
       if (!sl || !sl.type) continue;
       var nm = '';
@@ -3683,6 +3748,11 @@ tr.best:hover td{background:var(--tint-cy-3)}
     return out.join('、');
   }
 
+  /* 描述当前实际锁定的槽位及其词条（来自用户输入） */
+  function describeLockedSlots(res) {
+    return describeMaskSlots(res.startLocked);
+  }
+
   function renderGuide(res) {
     var area = $('#pane-guide');
     var g = res.guide;
@@ -3691,9 +3761,13 @@ tr.best:hover td{background:var(--tint-cy-3)}
     // 概览三步
     html += '<div class="panel" style="margin-bottom:14px"><h3>策略总览</h3>';
     var step = 1;
+    var afterStartMask = (g.start.keepMask | res.fixedMask);
+    var startLockChanged = (g.start.act !== -1 && afterStartMask !== res.startLocked);
     html += '<div class="step"><div class="step-n">' + (step++) + '</div><div class="step-c">' +
       '<div class="t">起步：' + esc(g.start.actionText) + '</div>' +
-      '<div class="d">当前锁定：<b>' + esc(g.start.lockedDesc || g.start.keepDesc) + '</b>　剩余期望：<b>' + fmt(g.start.cost, 1) + '</b> 颗石头</div>' +
+      '<div class="d">当前锁定：<b>' + esc(g.start.lockedDesc || g.start.keepDesc) + '</b>' +
+      (startLockChanged ? ' → 起手锁定：<b>' + esc(g.start.keepDesc) + '</b>' : '') +
+      '　剩余期望：<b>' + fmt(g.start.cost, 1) + '</b> 颗石头</div>' +
       '</div></div>';
 
     var lv0 = g.levels[0];
@@ -3701,6 +3775,8 @@ tr.best:hover td{background:var(--tint-cy-3)}
     var keepRows0 = lv0.rows.filter(function (r) { return !r.lock && !r.enterPhase2; });
     var doneRows0 = lv0.rows.filter(function (r) { return r.enterPhase2; });
     var lockedDesc0 = describeLockedSlots(res);
+    var activeMask0 = (lv0.baseMask | res.fixedMask);
+    var activeDesc0 = describeMaskSlots(activeMask0);
     /* 最优策略第一步就直接进阶段二 → 种类已经齐备，阶段一整体跳过 */
     var skipPhase1 = (g.start.act === -1);
     var allDone = (res.totals.stones <= 1e-9);
@@ -3715,8 +3791,9 @@ tr.best:hover td{background:var(--tint-cy-3)}
         '，此时点「变更效果」只会把已经凑齐的种类重掷掉。<br>' +
         '<span style="color:var(--txt-3)">直接跳到阶段二洗阶数即可。</span>';
     } else {
-      if (lockedDesc0) {
-        html += '当前已锁：<b>' + esc(lockedDesc0) + '</b>，这些槽位不会被重洗。<br>';
+      if (activeDesc0) {
+        html += (activeMask0 !== res.startLocked ? '起手已锁：' : '当前已锁：') +
+          '<b>' + esc(activeDesc0) + '</b>，这些槽位不会被重洗。<br>';
       }
       if (lockRows0.length) {
         html += '当出现下列目标词条时<b>立即锁定</b>，其余情况继续洗：<br>';
@@ -3731,7 +3808,7 @@ tr.best:hover td{background:var(--tint-cy-3)}
           html += '· 在 ' + slotName(r.slot) + ' 出现「' + esc(r.labelName) + '」' + (r.bandDesc ? '（' + esc(r.bandDesc) + '）' : '') +
             ' → <b>锁定 ' + esc(lockTxt) + '</b>（花费 ' + fmt(r.lockCost, 0) + ' 颗），之后剩余期望 <b>' + fmt(r.cost, 1) + '</b> 颗<br>';
         });
-      } else if (lv0.baseMask === 0) {
+      } else if (activeMask0 === 0) {
         html += '在 0 锁状态下，<b>不锁定任何词条</b>直接反复洗练直到种类齐备。<br>';
       } else {
         html += '在其余未锁定槽位上，<b>不需要再追加锁定</b>，继续洗练直到种类齐备即可。<br>';
@@ -3752,17 +3829,18 @@ tr.best:hover td{background:var(--tint-cy-3)}
     }
     html += '</div></div></div>';
 
+    var needPhase2 = (res.totals.phase2Rolls > 1e-9 || res.totals.phase2Stones > 1e-9);
     html += '<div class="step"><div class="step-n">' + (step++) + '</div><div class="step-c">' +
-      '<div class="t">阶段二：单独洗数值' + (skipPhase1 && !allDone ? '（现在就能开始）' : '') + '</div>' +
+      '<div class="t">阶段二：单独洗数值' + (skipPhase1 && !allDone ? '（现在就能开始）' : (!needPhase2 && !allDone ? '（无需）' : '')) + '</div>' +
       '<div class="d">' + (allDone
         ? '目标已达成，<b>无需再洗数值</b>。'
         : (skipPhase1
-          ? '种类齐备，<b>直接反复点「变更数值」</b>：每次只重掷未锁定槽位的阶数，种类不会变。' +
+          ? '种类齐备，<b>直接反复点「变更数值」</b>：每次可选择「保留当前」或「应用更改」，仅在出现新达标槽位时应用并锁定。' +
             '该阶段期望共花 <b>' + fmt(res.totals.phase2Stones + res.totals.lockStones, 1) + '</b> 颗石头。'
-          : (res.phase2.applicable
-            ? '种类齐备后，<b>解锁阶数未达标的槽位</b>、<b>锁定已达标的槽位</b>，反复点击「变更数值」。' +
-              '该阶段期望再花 <b>' + fmt(res.totals.phase2Stones + res.totals.lockStones, 1) + '</b> 颗石头。'
-            : '按最优策略，通常有机会在洗种类的同一次洗练中直接拿到达标阶数，无需单独洗数值；若最终仍需洗数值，见「数值洗练阶段」页。'))) +
+          : (needPhase2
+            ? '种类齐备后，先解锁阶数未达标的槽位，反复点击「变更数值」；每次可「保留当前」以保留低阶数值占位，仅在出现新达标槽位时「应用更改」并锁定。' +
+              '洗数值本身期望消耗 <b>' + fmt(res.totals.phase2Stones, 1) + '</b> 颗石头（约 ' + fmt(res.totals.phase2Rolls, 1) + ' 次，补锁已计入总锁定消耗）。'
+            : '所有目标均为 ≥1 阶（不限阶数），词条种类齐备即达成目标，<b>无需进入「变更数值」阶段</b>。'))) +
       '</div></div></div>';
     html += '</div>';
 
@@ -3770,7 +3848,7 @@ tr.best:hover td{background:var(--tint-cy-3)}
     if (skipPhase1) {
       html += '<div class="mini-note">阶段一被跳过，因此没有「该锁哪个词条」的表格 —— ' +
         '你要做的只有一件事：<b>反复点「变更数值」</b>，直到三个槽位的阶数都达标。' +
-        '想要更省石头，可以在某个槽位先达标时把它锁住再继续洗，具体取舍见「数值洗练阶段」页。</div>';
+        '每次可先选「保留当前」保留低阶占位，仅在出现新达标槽位时「应用更改」并锁定，具体取舍见「数值洗练阶段」页。</div>';
       area.innerHTML = html;
       return;
     }
@@ -3781,11 +3859,17 @@ tr.best:hover td{background:var(--tint-cy-3)}
       var lockRows = rows.filter(function (r) { return r.lock || r.enterPhase2; });
       var show = lockRows.length ? lockRows : rows;
       var everyDone = rows.length > 0 && rows.every(function (r) { return r.cost <= 1e-9; });
+      var lv0Mask = (lv.baseMask | res.fixedMask);
+      var lv0Title = lv0Mask
+        ? ((lv0Mask !== res.startLocked ? '第 1 步 · 起手锁定后（已锁 ' : '第 1 步 · 当前状态（已锁 ') + pcOf(lv0Mask) + ' 个）')
+        : '第 1 步 · 0 锁状态';
+      var lv0Badge = (lv.level === 0 && lv0Mask) ? describeMaskSlots(lv0Mask) : '';
       html += '<div class="panel" style="margin-bottom:14px">' +
         '<h3>' + (lv.level === 0
-          ? (res.startLocked ? '第 1 步 · 当前状态（已锁 ' + pcOf(res.startLocked) + ' 个）' : '第 1 步 · 0 锁状态')
+          ? lv0Title
           : '第 2 步 · 已锁 ' + lv.level + ' 个目标词条') +
         ' <span class="tag">该锁就锁</span>' +
+        (lv.level === 0 && lv0Badge ? ' <span style="color:var(--gold-2);font-size:calc(11px + var(--fs-bump));font-weight:600">已锁：' + esc(lv0Badge) + '</span>' : '') +
         (lv.level > 0 && lv.rows[0] && lv.rows[0].baseDesc ? ' <span style="color:var(--gold-2);font-size:calc(11px + var(--fs-bump));font-weight:600">当前已锁：' + esc(lv.rows[0].baseDesc) + '</span>' : '') +
         '</h3>' +
         '<div class="tbl-wrap"><table><thead><tr>' +
@@ -3915,20 +3999,22 @@ tr.best:hover td{background:var(--tint-cy-3)}
     for (var t = 1; t <= 15; t++) {
       var q = E.probGE(model, t);
       var e1 = q > 0 ? 1 / q : Infinity;
-      var e2 = q > 0 ? (1 - Math.pow(1 - q, 2)) / q : Infinity;
-      var e3 = q > 0 ? (1 - Math.pow(1 - q, 3)) / q : Infinity;
+      var p2 = 1 - Math.pow(1 - q, 2);
+      var p3 = 1 - Math.pow(1 - q, 3);
+      var e2 = p2 > 0 ? 1 / p2 : Infinity;
+      var e3 = p3 > 0 ? 1 / p3 : Infinity;
       html += '<tr>' +
         '<td class="mid"><span class="tier-pill ' + tierClass(t) + '">≥ ' + t + ' 阶</span></td>' +
         '<td class="num">' + pct(q, 2) + '</td>' +
         '<td class="num">' + (q > 0 ? fmt(1 / q, 2) : '∞') + '</td>' +
         '<td class="num" style="color:var(--cyan-2)">' + (q > 0 ? fmt(e1, 2) : '∞') + '</td>' +
-        '<td class="num" style="color:var(--cyan-2)">' + (q > 0 ? fmt(e2, 2) : '∞') + '</td>' +
-        '<td class="num" style="color:var(--cyan-2)">' + (q > 0 ? fmt(e3, 2) : '∞') + '</td>' +
+        '<td class="num" style="color:var(--cyan-2)">' + (p2 > 0 ? fmt(e2, 2) : '∞') + '</td>' +
+        '<td class="num" style="color:var(--cyan-2)">' + (p3 > 0 ? fmt(e3, 2) : '∞') + '</td>' +
         '</tr>';
     }
     html += '</tbody></table></div>' +
-      '<div class="mini-note">右三列为「不锁定任何槽位、n 个槽位一起洗，直到<b>全部</b>达标」的期望次数：' +
-      'E = (1−(1−q)^n) / q。锁定达标槽位会抬高单次成本但降低方差，最优取舍由上方解析解给出。</div></div>';
+      '<div class="mini-note">右三列为「n 个独立槽位同时洗，直到<b>至少 1 个</b>达标」的期望次数：' +
+      'E = 1 / (1 − (1−q)^n)（单槽独立近似，未计同装备数值唯一性；完整多槽精确解析解见上方表格）。</div></div>';
     return html;
   }
 

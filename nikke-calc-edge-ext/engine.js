@@ -1258,28 +1258,46 @@
       return startViewFull.slice();
     }
 
-    /* 枚举 keepMask 的所有组合（保持至少 1 个可洗槽位） */
+    /* 枚举 keepMask 的所有组合（起手锁哪几个槽，然后直接开洗或进阶段二） */
+    var curDynLocked = inLocked & ~fixedMask;
     for (var bi = 0; bi < (1 << candSlots.length); bi++) {
       var keepMask = 0;
       for (var j = 0; j < candSlots.length; j++) if (bi & (1 << j)) keepMask |= (1 << candSlots[j]);
-      /* 通常必须至少留 1 个未锁定槽位用于洗练；
-         但「三个槽位已经全部达标」是合法终态 —— 一次都不用洗，直接 0 消耗。
-         此时全锁组合同样要进入方案空间，否则会误报「无法达成目标」。 */
       var allSlotsLocked = (pc(keepMask) + pc(fixedMask) >= 3);
-      /* 必须包含所有已锁定的目标槽位吗？不 —— 允许"解锁"作为一个可选方案（免费） */
       var viewForState = viewOfKeep();
-      var dec = decide(keepMask, viewForState);
-      if (!dec) continue;
-      if (allSlotsLocked && tot(dec.vec) > 1e-9) continue;   // 全锁却还没达标 → 进不了洗练，丢弃
+      var initLockSlots = keepMask & ~curDynLocked;
+      var keptCount = pc(curDynLocked & keepMask) + pc(fixedMask);
+      var targetCount = pc(keepMask) + pc(fixedMask);
+      var initLockCost = lockDeltaCost(model, keptCount, targetCount);
+
+      var bestOptDec = null;
+      // 动作 A：种类已齐备时直接进入阶段二（洗数值）
+      var p2Opt = phase2Entry(model, viewForState, keepMask, fixedMask);
+      if (p2Opt !== null) {
+        var p2Vec = vadd([0, p2Opt[1], p2Opt[2], 0, p2Opt[4]], [0, 0, initLockCost, 0, 0]);
+        bestOptDec = { act: -1, vec: p2Vec };
+      }
+      // 动作 B：以 keepMask 作为锁定状态立即进入阶段一洗种类
+      if (!allSlotsLocked) {
+        var stKeep = p1.stateOf(keepMask, labelsAt(keepMask, viewForState));
+        if (stKeep && stKeep.feasible && W[stKeep.key] && !isInf(W[stKeep.key])) {
+          var p1Vec = vadd(W[stKeep.key], [0, 0, initLockCost, 0, 0]);
+          if (!bestOptDec || tot(p1Vec) < tot(bestOptDec.vec)) {
+            bestOptDec = { act: keepMask, vec: p1Vec };
+          }
+        }
+      }
+      if (!bestOptDec) continue;
+      if (allSlotsLocked && tot(bestOptDec.vec) > 1e-9) continue;   // 全锁却还没达标 → 进不了洗练，丢弃
       var keepLabels = [];
       for (var kl = 0; kl < 3; kl++) if (keepMask & (1 << kl)) keepLabels.push(viewForState[kl]);
       var opt = {
         keepMask: keepMask,
         keepLabels: keepLabels,
         keepView: viewForState,
-        act: dec.act,
-        vec: dec.vec,
-        cost: tot(dec.vec),
+        act: bestOptDec.act,
+        vec: bestOptDec.vec,
+        cost: tot(bestOptDec.vec),
         unlockSlots: (function () {
           var arr = [];
           for (var u = 0; u < 3; u++) {
@@ -1287,11 +1305,16 @@
           }
           return arr;
         })(),
-        newlyLocked: dec.act >= 0 ? (dec.act & ~keepMask) : 0,
-        locksCount: pc(keepMask) + pc(fixedMask)
+        initLockSlots: initLockSlots,
+        initLockCost: initLockCost,
+        newlyLocked: bestOptDec.act >= 0 ? (bestOptDec.act & ~curDynLocked) : 0,
+        locksCount: targetCount
       };
       startOptions.push(opt);
-      if (!bestStart || tot(dec.vec) < tot(bestStart.vec)) bestStart = opt;
+      if (!bestStart || opt.cost < bestStart.cost - 1e-9 ||
+          (Math.abs(opt.cost - bestStart.cost) <= 1e-9 && opt.initLockCost < bestStart.initLockCost)) {
+        bestStart = opt;
+      }
     }
     if (!bestStart) {
       /* 三个槽位都被锁死时没有任何可洗槽位：这不是"目标无法达成"，而是需要先解锁 */
@@ -1462,10 +1485,34 @@
     W_REF = W;
 
     /* ---------- 起步 ---------- */
+    var initLockSlots = bestStart.initLockSlots || 0;
+    var initLockCost = bestStart.initLockCost || 0;
+    var unlockList = bestStart.unlockSlots || [];
+    var unlockDesc = unlockList.map(function (u) { return '第' + (u + 1) + '槽'; }).join(' + ');
+    var startActionText;
+    if (bestStart.act === -1 && tot(bestStart.vec) <= 1e-9) {
+      startActionText = '目标已全部达成：不用再洗练';
+    } else if (bestStart.act === -1) {
+      startActionText = '词条种类已齐备，直接进入「变更数值」阶段';
+    } else if (unlockList.length && initLockSlots) {
+      startActionText = '先解锁 ' + unlockDesc + '，再锁定 ' + describeMask(initLockSlots, model) +
+        '（花费 ' + initLockCost + ' 颗），然后点击「变更效果」洗种类';
+    } else if (initLockSlots) {
+      startActionText = '先锁定 ' + describeMask(initLockSlots, model) +
+        '（花费 ' + initLockCost + ' 颗），再点击「变更效果」继续洗种类';
+    } else if (unlockList.length) {
+      startActionText = '先解锁 ' + unlockDesc + '（免费），再点击「变更效果」继续洗种类';
+    } else {
+      startActionText = (inLocked ? '保持当前锁定（不解锁），' : '不锁定任何槽位，') +
+        '直接点击「变更效果」洗种类';
+    }
+
     guide.start = {
       keepMask: bestStart.keepMask,
-      unlock: bestStart.unlockSlots || [],
-      keepDesc: describeMask(bestStart.keepMask, model),
+      unlock: unlockList,
+      initLockSlots: initLockSlots,
+      initLockCost: initLockCost,
+      keepDesc: describeMask(bestStart.keepMask | fixedMask, model),
       lockedDesc: (function () {
         var arr = [];
         for (var k = 0; k < 3; k++) {
@@ -1474,12 +1521,7 @@
         return arr.length ? arr.join(' + ') : '无锁定';
       })(),
       act: bestStart.act,
-      actionText: (bestStart.act === -1 && tot(bestStart.vec) <= 1e-9)
-        ? '目标已全部达成：不用再洗练'
-        : (bestStart.act === -1 ? '词条种类已齐备，直接进入「变更数值」阶段' :
-          (bestStart.act === bestStart.keepMask
-            ? '保持当前锁定（不解锁），点击「变更效果」继续洗种类'
-            : '立即锁定 ' + describeMask(bestStart.act & ~bestStart.keepMask, model) + '，再点击「变更效果」')),
+      actionText: startActionText,
       vec: bestStart.vec,
       cost: tot(bestStart.vec)
     };
@@ -1506,11 +1548,18 @@
     for (s = 0; s < 3; s++) if (curMask & (1 << s)) curLabels.push(startView[s]);
     var curBaseDesc = curMask ? describeMask(curMask, model) : '无';
 
+    var lockedTypes0 = {};
+    for (s = 0; s < 3; s++) {
+      if ((curMask & (1 << s)) && startView[s] !== ABSENT) lockedTypes0[labType(startView[s])] = 1;
+      if ((fixedMask & (1 << s)) && fixedLabels[s] !== ABSENT) lockedTypes0[labType(fixedLabels[s])] = 1;
+    }
+
     var level0 = { level: 0, baseMask: curMask, baseLabels: curLabels, rows: [], started: [] };
     for (s = 0; s < 3; s++) {
       if (fixedMask & (1 << s)) continue;
       if (curMask & (1 << s)) continue;       // 已锁定槽位不作为"新出现"参与枚举
       for (li = 0; li < labelRows.length; li++) {
+        if (lockedTypes0[labType(labelRows[li])]) continue;  // 已锁定槽位占用的词条种类不可能再次出现
         // 起点视图：已锁定槽位带着自己的词条，其余槽位只有本次枚举的那个有值
         var view = baseView();
         for (var lk = 0; lk < 3; lk++) {
@@ -1544,10 +1593,14 @@
       var smSlot = 0;
       for (s2 = 0; s2 < 3; s2++) if (sm & (1 << s2)) smSlot = s2;
       if (smSlot !== st0.slot) continue;
+      var lockedTypes1 = {};
+      lockedTypes1[labType(st0.label)] = 1;
+      for (s2 = 0; s2 < 3; s2++) if ((fixedMask & (1 << s2)) && fixedLabels[s2] !== ABSENT) lockedTypes1[labType(fixedLabels[s2])] = 1;
       for (var s4 = 0; s4 < 3; s4++) {
         if (sm & (1 << s4)) continue;
         if (fixedMask & (1 << s4)) continue;
         for (var lj = 0; lj < labelRows.length; lj++) {
+          if (lockedTypes1[labType(labelRows[lj])]) continue; // 互斥词条不可能再次出现
           var dk = sm + '|' + s4 + '|' + labelRows[lj];
           if (emitted[dk]) continue;
           var view1 = baseView();
@@ -1722,12 +1775,13 @@
       if (Date.now() - tStart > 2500) break;             // 总时间预算：保证页面不卡死
       var tTrial = Date.now();
       /* 起点必须与"被采纳的起始方案"完全一致：
-         选用 keepMask 保留的槽位带着词条进入，其余槽位为空（下一次洗练会被重掷）。 */
+         选用 keepMask 保留的槽位带着词条进入，先计入起手新增锁定消耗。 */
+      var initLockCost = sol.chosenStart.initLockCost || 0;
       var mask = sol.chosenStart.keepMask;
       var view = (sol.chosenStart.keepView || sol.startLabels).slice();
       var guard = 0;
       /* 单次模拟先在局部累积，只有跑完的样本才计入统计 */
-      var cTotal = 0, cP1 = 0, cP2 = 0, cLock = 0, cR1 = 0, cR2 = 0;
+      var cTotal = initLockCost, cP1 = 0, cP2 = 0, cLock = initLockCost, cR1 = 0, cR2 = 0;
 
       /* ---------- 阶段一：严格按策略 —— 锁定 → 再洗 → 锁定 → ... ---------- */
       while (guard++ < 500) {

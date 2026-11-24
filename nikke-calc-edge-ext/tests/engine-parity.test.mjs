@@ -15,7 +15,9 @@ const ENGINE_JS_PATH = path.join(EXT_ROOT, "engine.js");
 function extractHtmlEngineSource() {
   const html = fs.readFileSync(SOURCE_HTML_PATH, "utf8");
   const lines = html.split(/\r?\n/);
-  return lines.slice(1063, 3006).join("\n") + "\n";
+  const startIdx = lines.findIndex((l) => l.trim() === "/*!");
+  const endIdx = lines.findIndex((l, i) => i > startIdx && l === "});");
+  return lines.slice(startIdx, endIdx + 1).join("\n") + "\n";
 }
 
 function loadEngineFromSource(source, filename) {

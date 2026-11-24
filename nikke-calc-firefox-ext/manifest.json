@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "NIKKE 装备洗词条期望计算器",
   "short_name": "NIKKE洗词条",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "适配 Firefox 的 NIKKE 企业装洗词条精确 MDP 期望计算器，支持通过 Blablalink Cookie 同步角色装备与四装备词条汇总导入。",
   "browser_specific_settings": {
     "gecko": {
