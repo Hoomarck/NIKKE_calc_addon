@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>隐私政策 · NIKKE 装备洗词条期望计算器</title>
+<meta name="description" content="NIKKE 装备洗词条期望计算器浏览器扩展的隐私政策 / Privacy Policy" />
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --text: #1b1f24;
+    --muted: #5c6672;
+    --line: #e2e6ea;
+    --accent: #1f6feb;
+    --note: #f2f6ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a;
+      --panel: #1b1f23;
+      --text: #e6e9ec;
+      --muted: #9aa4ae;
+      --line: #2b3137;
+      --accent: #6aa4ff;
+      --note: #1a2333;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    padding: 40px 20px 80px;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.75 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  }
+  main {
+    max-width: 840px;
+    margin: 0 auto;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 40px 44px 48px;
+  }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 20px; margin-bottom: 28px; }
+  h1 { font-size: 26px; line-height: 1.35; margin: 0 0 10px; letter-spacing: .2px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0; }
+  .sub code { font-size: 13px; }
+  h2 {
+    font-size: 19px; margin: 38px 0 12px; padding-top: 4px;
+    border-top: 1px solid var(--line); padding-top: 22px;
+  }
+  h2:first-of-type { border-top: 0; padding-top: 0; }
+  h3 { font-size: 16px; margin: 22px 0 8px; }
+  p, li { margin: 10px 0; }
+  ul, ol { padding-left: 22px; }
+  li > ul { margin: 6px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 12px; border: 1px solid var(--line); vertical-align: top; }
+  th { background: transparent; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+  .note {
+    background: var(--note);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 20px 0;
+    font-size: 15px;
+  }
+  .lang { margin: 0 0 26px; font-size: 14px; color: var(--muted); }
+  .lang a { margin-right: 14px; }
+  .en { margin-top: 56px; padding-top: 32px; border-top: 2px solid var(--line); }
+  footer {
+    margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--line);
+    color: var(--muted); font-size: 13.5px;
+  }
+  @media (max-width: 620px) {
+    body { padding: 20px 12px 60px; }
+    main { padding: 26px 20px 32px; border-radius: 10px; }
+    h1 { font-size: 22px; }
+    th, td { padding: 8px 10px; }
+    th { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>隐私政策 · NIKKE 装备洗词条期望计算器</h1>
+    <p class="sub">
+      浏览器扩展（Firefox / Microsoft Edge）&nbsp;·&nbsp;扩展版本 <code>1.1.2</code><br />
+      生效日期：2026 年 11 月 27 日&nbsp;·&nbsp;最后更新：2026 年 11 月 27 日
+    </p>
+  </header>
+
+  <p class="lang"><a href="#zh">中文</a><a href="#en">English</a></p>
+
+  <h2 id="zh">一、适用范围</h2>
+  <p>
+    本隐私政策适用于「NIKKE 装备洗词条期望计算器」浏览器扩展（Firefox 与 Microsoft Edge 版本，以下称「本扩展」）。
+    本扩展是一款纯客户端的计算工具，用于估算《胜利女神：妮姬》企业装（T10）词条的洗练期望消耗与最优锁定策略。
+  </p>
+  <div class="note">
+    <strong>一句话概括：</strong>本扩展不收集、不上传、不出售任何用户数据。所有数据都停留在你自己的浏览器里，
+    唯一的对外请求是代替你向 <code>blablalink.com</code> 读取你自己账号的角色与装备信息。
+  </div>
+
+  <h2>二、我们不收集的信息</h2>
+  <ul>
+    <li>不收集姓名、邮箱、地址、电话等任何可识别个人身份的信息；本扩展没有注册、登录或账号体系。</li>
+    <li>不收集浏览历史、网页内容、点击行为、鼠标或键盘记录。</li>
+    <li>不使用任何统计分析、埋点、崩溃上报或广告 SDK（无 Google Analytics、Sentry、Umami 等）。</li>
+    <li>不向开发者服务器或任何第三方传输、共享、出售用户数据；本扩展不运营任何后端服务器。</li>
+  </ul>
+
+  <h2>三、本扩展读取哪些数据，以及为什么</h2>
+  <p>
+    本扩展的「角色装备导入」是<strong>可选功能</strong>。若你选择使用它，本扩展会读取以下数据，且仅用于在本地完成计算：
+  </p>
+  <table>
+    <thead>
+      <tr><th>数据</th><th>来源</th><th>用途</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>你已登录的 <code>blablalink.com</code> 会话 Cookie</td>
+        <td>浏览器 Cookie 存储</td>
+        <td>以你本人的身份向该站点请求你自己的角色与装备数据</td>
+      </tr>
+      <tr>
+        <td>账号资料（昵称、区服 <code>area_id</code>）</td>
+        <td><code>api.blablalink.com</code></td>
+        <td>展示同步状态，确定请求所属区服</td>
+      </tr>
+      <tr>
+        <td>你拥有的妮姬列表</td>
+        <td><code>api.blablalink.com</code></td>
+        <td>供你选择要计算的游戏角色</td>
+      </tr>
+      <tr>
+        <td>角色的四件装备及其词条（类型、阶数、数值）</td>
+        <td><code>api.blablalink.com</code></td>
+        <td>填入计算器的「初始状态」，并生成四装备词条汇总</td>
+      </tr>
+      <tr>
+        <td>角色 / 装备名称与词条数值对照表</td>
+        <td><code>sg-tools-cdn.blablalink.com</code></td>
+        <td>公开的静态 JSON，用于把词条 ID 翻译成名称与百分比</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    若你完全不想让本扩展读取上述数据，可以不使用同步功能，直接在计算器中手动录入词条——除主题偏好外，
+    本扩展不会发起任何网络请求。
+  </p>
+
+  <h2>四、数据存储位置与保留期限</h2>
+  <ul>
+    <li>
+      所有数据保存在浏览器本扩展专属的本地存储中（Firefox 使用 <code>browser.storage.local</code>，
+      Chromium 内核使用 <code>chrome.storage.local</code>），不涉及云端同步，也不会与其他扩展或网页共享。
+    </li>
+    <li>
+      存储内容包括：账号昵称与区服、角色与装备数据快照、会话 Cookie、以及你的计算器偏好
+      （主题、目标词条、各部位锁定状态、高级概率参数）。
+    </li>
+    <li>
+      数据没有固定保留期限：它一直存在，直到你在扩展面板中点击「清空」/「保存或更新 Cookie」覆盖它，
+      或卸载本扩展为止。卸载扩展会由浏览器自动删除全部本地数据。
+    </li>
+  </ul>
+
+  <h2>五、数据传输与共享</h2>
+  <ul>
+    <li>
+      本扩展只与你主动使用过的 <code>blablalink.com</code> 通信，请求内容为你自己的游戏数据，
+      不带任何开发者标识或额外个人信息。
+    </li>
+    <li>
+      本扩展不使用远程代码。全部 JavaScript、HTML、CSS 均打包在扩展内，不存在
+      <code>eval</code>、远程脚本标签或外部模块加载；从网络获取的只有上文所述的 JSON 数据，且仅作为数据处理，不会被执行。
+    </li>
+    <li>本扩展不包含广告、推广链接、联盟追踪或任何形式的商业数据变现。</li>
+  </ul>
+
+  <h2>六、你的控制权</h2>
+  <ul>
+    <li><strong>随时清除</strong>：在扩展的同步面板中点击「清空」可删除同步日志、角色数据与已保存的会话 Cookie。</li>
+    <li><strong>撤回站点权限</strong>：在浏览器扩展管理页面（<code>about:addons</code> / <code>edge://extensions</code>）中
+      关闭本扩展对 <code>blablalink.com</code> 的站点访问权限，同步功能即失效，其余计算功能不受影响。</li>
+    <li><strong>完全移除</strong>：卸载本扩展即可删除全部本地数据，无需额外申请。</li>
+  </ul>
+
+  <h2>七、权限用途说明</h2>
+  <table>
+    <thead>
+      <tr><th>权限</th><th>用途</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>cookies</code></td><td>读取你已登录的 blablalink.com 会话，仅用于代你请求自己的数据</td></tr>
+      <tr><td><code>storage</code></td><td>在本机保存计算偏好与装备数据快照</td></tr>
+      <tr><td><code>tabs</code></td><td>仅检测本扩展自己的计算器页面是否已打开，避免重复开标签页</td></tr>
+      <tr><td><code>sidePanel</code> / <code>sidebar_action</code></td><td>在侧边栏展示本扩展自带的同步面板</td></tr>
+      <tr><td><code>declarativeNetRequest</code>（含 HostAccess）</td><td>将你自己的会话 Cookie 附加到本扩展发往 api.blablalink.com 的请求上，规则仅匹配该域名</td></tr>
+      <tr><td><code>*://*.blablalink.com/*</code></td><td>调用该站点自身的 API 与公开的静态数据目录</td></tr>
+    </tbody>
+  </table>
+
+  <h2>八、第三方服务</h2>
+  <p>
+    本扩展会访问 <code>blablalink.com</code>（含 <code>api.blablalink.com</code> 与 <code>sg-tools-cdn.blablalink.com</code>）。
+    这些请求由你的浏览器直接发出，遵循该站点自身的隐私政策与服务条款，本扩展无法控制其数据处理行为。
+    除该站点外，本扩展不与任何第三方服务通信。
+  </p>
+
+  <h2>九、儿童隐私</h2>
+  <p>
+    本扩展不面向 13 岁以下儿童，也不会有意收集儿童的个人信息。如前所述，本扩展本身不收集任何个人信息。
+  </p>
+
+  <h2>十、政策变更与联系方式</h2>
+  <p>
+    若本扩展的数据处理方式发生变化，本页面会同步更新并修改上方的「最后更新」日期；涉及实质性变更时，
+    会在扩展更新说明中注明。
+  </p>
+  <p>
+    如有疑问、数据删除请求或安全问题，请通过项目仓库提交 Issue：<br />
+    <a href="https://github.com/Hoomarck/NIKKE_calc_addon/issues" target="_blank" rel="noopener">
+      https://github.com/Hoomarck/NIKKE_calc_addon/issues
+    </a>
+  </p>
+
+  <!-- ============================ English ============================ -->
+  <section class="en" id="en" lang="en">
+    <h2>Privacy Policy · NIKKE Gear Substats Expectation Calculator</h2>
+    <p class="sub">
+      Browser extension for Firefox and Microsoft Edge&nbsp;·&nbsp;Version <code>1.1.2</code><br />
+      Effective date: November 27, 2026&nbsp;·&nbsp;Last updated: November 27, 2026
+    </p>
+
+    <h3>1. Scope</h3>
+    <p>
+      This policy covers the browser extension "NIKKE Gear Substats Expectation Calculator" (Firefox and
+      Microsoft Edge builds, the "extension"). It is a fully client-side calculator that estimates the expected
+      material cost and optimal locking strategy for rerolling Overload (T10) gear substats in
+      <em>Goddess of Victory: Nikke</em>.
+    </p>
+    <div class="note">
+      <strong>In one sentence:</strong> the extension does not collect, upload, or sell any user data. Everything
+      stays in your own browser. The only outbound requests it makes are to <code>blablalink.com</code>, on your
+      behalf, to read your own account's character and equipment data.
+    </div>
+
+    <h3>2. What we do not collect</h3>
+    <ul>
+      <li>No personally identifiable information — there is no sign-up, login, or account system.</li>
+      <li>No browsing history, page content, click, mouse, or keystroke logging.</li>
+      <li>No analytics, telemetry, crash reporting, or advertising SDKs.</li>
+      <li>No transmission to the developer's servers (there are none) or to any third party; no selling of data.</li>
+    </ul>
+
+    <h3>3. What the extension reads, and why</h3>
+    <p>Account import is an <strong>optional</strong> feature. If you enable it, the extension reads:</p>
+    <ul>
+      <li>
+        <strong>Your existing <code>blablalink.com</code> session cookies</strong> — to request your own character
+        and equipment data from that site's API, acting as you.
+      </li>
+      <li>
+        <strong>Account profile</strong> (nickname, <code>area_id</code>) and <strong>your owned Nikkes</strong> —
+        to show sync status and let you pick a character.
+      </li>
+      <li>
+        <strong>Each character's four gear pieces and their substats</strong> (type, tier, value) — to prefill the
+        calculator and build the four-piece substat summary.
+      </li>
+      <li>
+        <strong>Public static catalog JSON</strong> from <code>sg-tools-cdn.blablalink.com</code> — used only to
+        map substat IDs to names and percentages.
+      </li>
+    </ul>
+    <p>
+      If you do not want any of this read, simply skip the sync feature and type the substats in manually; apart
+      from your theme preference, the extension then makes no network requests at all.
+    </p>
+
+    <h3>4. Where data is stored and for how long</h3>
+    <p>
+      Everything is stored in the extension's own local storage (<code>browser.storage.local</code> /
+      <code>chrome.storage.local</code>). There is no cloud sync, and nothing is shared with other extensions or
+      websites. Stored items are: nickname and area, the character/equipment snapshot, the session cookies, and
+      your calculator preferences (theme, target substats, per-slot locks, advanced probability settings).
+    </p>
+    <p>
+      There is no fixed retention period. Data remains until you clear it in the extension panel or uninstall the
+      extension, at which point the browser deletes it automatically.
+    </p>
+
+    <h3>5. Transmission and sharing</h3>
+    <ul>
+      <li>
+        The extension communicates only with <code>blablalink.com</code>, and only carries your own game data. No
+        developer identifier or additional personal information is attached.
+      </li>
+      <li>
+        No remote code is used. All JavaScript, HTML, and CSS are packaged in the extension; there is no
+        <code>eval</code>, remote script tag, or external module loading. The only remote content is JSON, which is
+        parsed as data and never executed.
+      </li>
+      <li>No ads, affiliate links, tracking, or monetization of any kind.</li>
+    </ul>
+
+    <h3>6. Your controls</h3>
+    <ul>
+      <li><strong>Clear at any time</strong> — the sync panel's "clear" action deletes logs, character data, and stored cookies.</li>
+      <li><strong>Revoke site access</strong> — in <code>about:addons</code> or <code>edge://extensions</code>; sync stops working, calculation still does.</li>
+      <li><strong>Remove everything</strong> — uninstall the extension; the browser deletes all local data.</li>
+    </ul>
+
+    <h3>7. Permissions and their purpose</h3>
+    <table>
+      <thead><tr><th>Permission</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>cookies</code></td><td>Read your existing blablalink.com session to request your own data</td></tr>
+        <tr><td><code>storage</code></td><td>Keep calculator preferences and the gear snapshot locally</td></tr>
+        <tr><td><code>tabs</code></td><td>Detect whether the extension's own calculator page is already open</td></tr>
+        <tr><td><code>sidePanel</code> / <code>sidebar_action</code></td><td>Show the extension's own sync panel in the side panel</td></tr>
+        <tr><td><code>declarativeNetRequest</code> (+ HostAccess)</td><td>Attach your own session cookie to the extension's requests to api.blablalink.com; matches that host only</td></tr>
+        <tr><td><code>*://*.blablalink.com/*</code></td><td>Call that site's own API and public static catalog</td></tr>
+      </tbody>
+    </table>
+
+    <h3>8. Third-party services</h3>
+    <p>
+      The extension contacts <code>blablalink.com</code> (including <code>api.blablalink.com</code> and
+      <code>sg-tools-cdn.blablalink.com</code>). Those requests originate from your browser and are governed by
+      that site's own privacy policy and terms; the extension has no control over its processing. No other third
+      party is contacted.
+    </p>
+
+    <h3>9. Children</h3>
+    <p>
+      The extension is not directed to children under 13 and does not knowingly collect personal information from
+      them. As stated above, it collects no personal information at all.
+    </p>
+
+    <h3>10. Changes and contact</h3>
+    <p>
+      If data handling changes, this page will be updated together with the "last updated" date above, and material
+      changes will be noted in the extension's release notes. For questions, data deletion requests, or security
+      reports, please open an issue at
+      <a href="https://github.com/Hoomarck/NIKKE_calc_addon/issues" target="_blank" rel="noopener">
+        github.com/Hoomarck/NIKKE_calc_addon/issues
+      </a>.
+    </p>
+  </section>
+
+  <footer>
+    项目仓库 / Repository：
+    <a href="https://github.com/Hoomarck/NIKKE_calc_addon" target="_blank" rel="noopener">
+      github.com/Hoomarck/NIKKE_calc_addon
+    </a>
+    <br />
+    本扩展与 Shift Up / Level Infinite 无关，为社区第三方工具。
+    Not affiliated with Shift Up or Level Infinite; a community-made third-party tool.
+  </footer>
+</main>
+</body>
+</html>

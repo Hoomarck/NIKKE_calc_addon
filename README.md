@@ -73,4 +73,13 @@
 - `nikke-calc-edge-ext/` — Microsoft Edge / Chromium (Manifest V3) 扩展源码、测试与打包脚本（迁移细节见 [nikke-calc-edge-ext/README.md](nikke-calc-edge-ext/README.md)）
 - `NIKKE-装备洗词条期望计算器.html` — 独立单文件网页版计算器（同时作为扩展计算引擎一致性的测试基准）
 - `implementation_plan.md` — 架构与功能设计说明
+- `PRIVACY.md` / [`docs/privacy-policy.html`](docs/privacy-policy.html) — 隐私政策（中文 / English）
 - `LICENSE` — 仓库许可协议
+
+---
+
+## 隐私
+
+本扩展不收集、不上传、不出售任何用户数据。Cookie 仅用于在本地代你请求 `blablalink.com` 上的你自己的角色与装备信息，全部数据保存在浏览器本地存储中。
+
+完整说明见 [隐私政策](PRIVACY.md)。
