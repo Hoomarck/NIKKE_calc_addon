@@ -103,7 +103,13 @@
           <div>
             <div class="ext-import-section-title">
               <span>四件装备词条汇总（全身 12 槽）</span>
-              <span class="hint" id="affixSummaryHint">高亮 = 当前计算部位</span>
+              <div class="ext-import-section-meta">
+                <label class="ext-import-filter ext-import-filter-sm" title="默认隐藏四件装备中未命中的 0 条词条；取消勾选可将其排至末尾显示">
+                  <input type="checkbox" id="hideZeroSummary" checked>
+                  <span>隐藏未命中</span>
+                </label>
+                <span class="hint" id="affixSummaryHint">高亮 = 当前计算部位</span>
+              </div>
             </div>
             <div class="affix-sum-grid" id="affixSummaryGrid"></div>
           </div>

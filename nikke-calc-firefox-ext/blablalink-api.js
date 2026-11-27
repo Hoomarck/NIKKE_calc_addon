@@ -1044,7 +1044,7 @@ export function summarizeCharacterEquipments(
     }
   }
 
-  return SUMMARY_TYPE_ORDER.map((id) => {
+  const items = SUMMARY_TYPE_ORDER.map((id) => {
     const entry = stats.get(id);
     const inActivePart =
       activePartIndex >= 0
@@ -1062,6 +1062,13 @@ export function summarizeCharacterEquipments(
       inActivePart,
     };
   });
+
+  // 排序：命中的词条（count > 0）前置，未命中的（count === 0）排至末尾；
+  // 两组内部均保持 SUMMARY_TYPE_ORDER 的原有相对顺序。
+  return [
+    ...items.filter((item) => item.count > 0),
+    ...items.filter((item) => item.count === 0),
+  ];
 }
 
 /* =========================================================================

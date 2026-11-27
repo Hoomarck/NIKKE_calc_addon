@@ -842,11 +842,18 @@ tr.best:hover td{background:var(--tint-cy-3)}
   display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start;
 }
 .ext-import-section-title{
-  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
   font-size:calc(13px + var(--fs-bump));font-weight:600;color:var(--td-text-primary);
   margin-bottom:8px;
 }
 .ext-import-section-title .hint{font-weight:400}
+.ext-import-section-meta{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.ext-import-filter-sm{
+  font-size:calc(12px + var(--fs-bump));gap:4px;
+}
+.ext-import-filter-sm input{width:13px;height:13px;}
 
 /* 四部位装备卡片 2x2 */
 .equip4-grid{
@@ -909,6 +916,17 @@ tr.best:hover td{background:var(--tint-cy-3)}
 /* 四件装备词条汇总 3x3 紧凑网格 */
 .affix-sum-grid{
   display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
+}
+/* 全部 4 件装备均无词条且开启「隐藏未命中」时的空状态 */
+.affix-sum-empty{
+  grid-column:1 / -1;
+  padding:14px 12px;
+  border:1px dashed var(--td-component-border);
+  border-radius:6px;
+  text-align:center;
+  font-size:calc(12.5px + var(--fs-bump));
+  color:var(--td-text-secondary);
+  background:var(--td-bg-page);
 }
 .affix-sum-item{
   border:1px solid var(--td-component-stroke);border-radius:6px;

@@ -40,6 +40,7 @@ import { callApi, ext, openSidePanel } from "./extension-api.js";
     activePartIndex: 0,
     searchQuery: "",
     onlyWithAffix: true,
+    hideZeroSummary: true,
     manualMode: false,
     collapsed: false,
   };
@@ -169,6 +170,7 @@ import { callApi, ext, openSidePanel } from "./extension-api.js";
           selectedNameCode: extState.selectedNameCode,
           activePartIndex: extState.activePartIndex,
           onlyWithAffix: extState.onlyWithAffix,
+          hideZeroSummary: extState.hideZeroSummary,
           manualMode: extState.manualMode,
           collapsed: extState.collapsed,
         },
@@ -298,6 +300,7 @@ import { callApi, ext, openSidePanel } from "./extension-api.js";
     const equip4Grid = $("#equip4Grid");
     const affixSummaryGrid = $("#affixSummaryGrid");
     const summaryHint = $("#affixSummaryHint");
+    const hideZeroChk = $("#hideZeroSummary");
 
     renderImportHeaderAndCardsOnly();
 
@@ -312,6 +315,7 @@ import { callApi, ext, openSidePanel } from "./extension-api.js";
     if (contentEl) contentEl.hidden = false;
     if (manualBanner) manualBanner.hidden = !extState.manualMode;
     if (onlyChk) onlyChk.checked = Boolean(extState.onlyWithAffix);
+    if (hideZeroChk) hideZeroChk.checked = Boolean(extState.hideZeroSummary);
 
     const acc = extState.snapshot?.account || {};
     const who = acc.roleName ? `${acc.roleName}` : "已同步账号";
@@ -419,42 +423,52 @@ import { callApi, ext, openSidePanel } from "./extension-api.js";
         state.cfg.types,
         activeIdxForSummary
       );
-      affixSummaryGrid.innerHTML = summary
-        .map((item) => {
-          const hasAffix = item.count > 0;
-          const partChips = EQUIP_PARTS.map((p, pi) => {
-            const t = item.partTiers[pi];
-            const isCur = activeIdxForSummary === pi;
-            const cls = [
-              "affix-part-chip",
-              t === null ? "is-empty" : "",
-              isCur ? "is-cur" : "",
+      // summary 已按「命中在前、0 条在末尾」排好序，这里只决定隐藏还是全部展示
+      const visibleSummary = extState.hideZeroSummary
+        ? summary.filter((item) => item.count > 0)
+        : summary;
+
+      if (visibleSummary.length === 0) {
+        affixSummaryGrid.innerHTML =
+          '<div class="affix-sum-empty">四件装备暂无词条（取消勾选「隐藏未命中」可查看全部 9 项）</div>';
+      } else {
+        affixSummaryGrid.innerHTML = visibleSummary
+          .map((item) => {
+            const hasAffix = item.count > 0;
+            const partChips = EQUIP_PARTS.map((p, pi) => {
+              const t = item.partTiers[pi];
+              const isCur = activeIdxForSummary === pi;
+              const cls = [
+                "affix-part-chip",
+                t === null ? "is-empty" : "",
+                isCur ? "is-cur" : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
+              return `<span class="${cls}" title="${esc(p.name)}">${esc(p.shortName)}${t === null ? "—" : t}</span>`;
+            }).join("");
+
+            const itemCls = [
+              "affix-sum-item",
+              hasAffix ? "has-affix" : "is-zero",
+              item.inActivePart ? "in-active" : "",
             ]
               .filter(Boolean)
               .join(" ");
-            return `<span class="${cls}" title="${esc(p.name)}">${esc(p.shortName)}${t === null ? "—" : t}</span>`;
-          }).join("");
 
-          const itemCls = [
-            "affix-sum-item",
-            hasAffix ? "has-affix" : "is-zero",
-            item.inActivePart ? "in-active" : "",
-          ]
-            .filter(Boolean)
-            .join(" ");
-
-          return (
-            `<div class="${itemCls}">` +
-            `<div class="affix-sum-top">` +
-            `<span class="affix-sum-name">${esc(item.name)}</span>` +
-            `<span class="affix-sum-count">${item.count} 条</span>` +
-            `</div>` +
-            `<div class="affix-sum-val">${hasAffix ? `+${fmt(item.totalVal, 2)}%` : "0.00%"}</div>` +
-            `<div class="affix-sum-parts">${partChips}</div>` +
-            `</div>`
-          );
-        })
-        .join("");
+            return (
+              `<div class="${itemCls}">` +
+              `<div class="affix-sum-top">` +
+              `<span class="affix-sum-name">${esc(item.name)}</span>` +
+              `<span class="affix-sum-count">${item.count} 条</span>` +
+              `</div>` +
+              `<div class="affix-sum-val">${hasAffix ? `+${fmt(item.totalVal, 2)}%` : "0.00%"}</div>` +
+              `<div class="affix-sum-parts">${partChips}</div>` +
+              `</div>`
+            );
+          })
+          .join("");
+      }
     }
   }
 
@@ -1709,6 +1723,12 @@ import { callApi, ext, openSidePanel } from "./extension-api.js";
       renderImportPanel();
     });
 
+    $("#hideZeroSummary")?.addEventListener("change", (ev) => {
+      extState.hideZeroSummary = Boolean(ev.target?.checked);
+      saveUiPrefs();
+      renderImportPanel();
+    });
+
     $("#charSelect")?.addEventListener("change", (ev) => {
       const code = String(ev.target?.value || "");
       if (!code) return;
@@ -1849,6 +1869,7 @@ import { callApi, ext, openSidePanel } from "./extension-api.js";
 
     const prefs = data?.[STORAGE_KEYS.UI_PREFS] || {};
     if (typeof prefs.onlyWithAffix === "boolean") extState.onlyWithAffix = prefs.onlyWithAffix;
+    if (typeof prefs.hideZeroSummary === "boolean") extState.hideZeroSummary = prefs.hideZeroSummary;
     if (typeof prefs.manualMode === "boolean") extState.manualMode = prefs.manualMode;
     if (typeof prefs.collapsed === "boolean") extState.collapsed = prefs.collapsed;
 

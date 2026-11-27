@@ -12,6 +12,7 @@ import {
   CALC_TYPE_DEFS,
   EQUIP_PARTS,
   STORAGE_KEYS,
+  SUMMARY_TYPE_ORDER,
   buildSyncedSnapshot,
   discoverAreaIdByProbing,
   fetchRoleInfo,
@@ -236,6 +237,95 @@ test("summarizeCharacterEquipments uses integer basis points and highlights acti
   assert.equal(def.count, 0);
   assert.equal(def.totalVal, 0);
   assert.equal(def.inActivePart, false);
+});
+
+test("summarizeCharacterEquipments sorts hit types first and zero-count types last", () => {
+  const equipments = [
+    {
+      slots: [
+        { type: "hit", tier: 5, locked: false }, // 7.59%
+        { type: "atk", tier: 11, locked: false }, // 11.81%
+        { type: null, tier: 1, locked: false },
+      ],
+    },
+    {
+      slots: [
+        { type: "elite", tier: 12, locked: false }, // 24.96%
+        { type: "ammo", tier: 10, locked: false }, // 64.82%
+        { type: null, tier: 1, locked: false },
+      ],
+    },
+    {
+      slots: [
+        { type: "atk", tier: 11, locked: false }, // 11.81%
+        { type: null, tier: 1, locked: false },
+        { type: null, tier: 1, locked: false },
+      ],
+    },
+    {
+      slots: [
+        { type: null, tier: 1, locked: false },
+        { type: null, tier: 1, locked: false },
+        { type: null, tier: 1, locked: false },
+      ],
+    },
+  ];
+
+  const summary = summarizeCharacterEquipments(equipments, CALC_TYPE_DEFS, 0); // helmet active
+
+  assert.equal(summary.length, 9);
+
+  // 命中的词条前置，组内保持 SUMMARY_TYPE_ORDER 相对顺序
+  assert.deepEqual(summary.slice(0, 4).map((x) => x.id), ["elite", "atk", "ammo", "hit"]);
+  assert.ok(summary.slice(0, 4).every((x) => x.count > 0));
+
+  // 未命中的 0 条词条排至末尾，组内同样保持 SUMMARY_TYPE_ORDER 相对顺序
+  assert.deepEqual(summary.slice(4).map((x) => x.id), ["crit", "cdmg", "spd", "chg", "def"]);
+  assert.ok(summary.slice(4).every((x) => x.count === 0 && x.totalBp === 0 && x.totalVal === 0));
+
+  // 排序不改动数值本身：整数基点累加，无浮点漂移
+  const atk = summary.find((x) => x.id === "atk");
+  assert.equal(atk.count, 2);
+  assert.equal(atk.totalBp, 2362);
+  assert.equal(atk.totalVal, 23.62);
+  assert.deepEqual(atk.partTiers, [11, null, 11, null]);
+  assert.equal(atk.inActivePart, true);
+
+  const hit = summary.find((x) => x.id === "hit");
+  assert.equal(hit.count, 1);
+  assert.equal(hit.totalVal, 7.59);
+  assert.equal(hit.inActivePart, true);
+
+  const elite = summary.find((x) => x.id === "elite");
+  assert.equal(elite.totalVal, 24.96);
+  assert.equal(elite.inActivePart, false);
+});
+
+test("summarizeCharacterEquipments keeps all nine types in SUMMARY_TYPE_ORDER when nothing is hit", () => {
+  assert.deepEqual(
+    [...SUMMARY_TYPE_ORDER],
+    ["elite", "atk", "ammo", "crit", "cdmg", "spd", "chg", "hit", "def"]
+  );
+
+  const emptyPart = {
+    slots: [
+      { type: null, tier: 1, locked: false },
+      { type: null, tier: 1, locked: false },
+      { type: null, tier: 1, locked: false },
+    ],
+  };
+  const summary = summarizeCharacterEquipments(
+    [emptyPart, emptyPart, emptyPart, emptyPart],
+    CALC_TYPE_DEFS,
+    2
+  );
+
+  assert.equal(summary.length, 9);
+  // 全部 0 条时顺序保持 SUMMARY_TYPE_ORDER 不变
+  assert.deepEqual(summary.map((x) => x.id), [...SUMMARY_TYPE_ORDER]);
+  assert.ok(summary.every((x) => x.count === 0 && x.totalBp === 0 && x.totalVal === 0));
+  assert.ok(summary.every((x) => x.inActivePart === false));
+  assert.ok(summary.every((x) => Array.isArray(x.partTiers) && x.partTiers.length === 4));
 });
 
 test("fetchRoleInfo recovers from 1300015 via CheckLogin + GetUserInfoNew + GetUserPrivacySetting", async () => {
