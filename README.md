@@ -83,3 +83,9 @@
 本扩展不收集、不上传、不出售任何用户数据。Cookie 仅用于在本地代你请求 `blablalink.com` 上的你自己的角色与装备信息，全部数据保存在浏览器本地存储中。
 
 完整说明见 [隐私政策](PRIVACY.md)。
+
+---
+
+## 致谢
+
+感谢 [ChrisLu7899/NIKKE-Workshop](https://github.com/ChrisLu7899/NIKKE-Workshop) 作者提供的思路与灵感，为本项目的角色装备同步与词条汇总功能带来了重要启发。
